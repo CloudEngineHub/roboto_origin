@@ -49,21 +49,21 @@ echo "========================================"
 get_default_branch() {
     local repo_url="$1"
 
-    # 尝试使用 git ls-remote 获取 HEAD 指向的分支
+    # 使用 git ls-remote --symref 自动检测 HEAD 指向的分支
     # 输出格式: ref: refs/heads/main	HEAD
-    local default_branch=$(git ls-remote --symref "$repo_url" HEAD 2>/dev/null | \
-        grep '^ref:' | \
-        sed 's/^ref: refs\/heads\///' | \
-        awk '{print $1}')
+    local output=$(git ls-remote --symref "$repo_url" HEAD 2>/dev/null)
 
-    # 如果检测失败，尝试常见的分支名
+    if [ $? -ne 0 ]; then
+        log_error "git ls-remote 失败: $repo_url"
+        return 1
+    fi
+
+    # 提取分支名
+    local default_branch=$(echo "$output" | grep '^ref:' | sed 's/^ref: refs\/heads\///' | awk '{print $1}')
+
     if [ -z "$default_branch" ]; then
-        for branch in main master dev development; do
-            if git ls-remote --exit-code "$repo_url" "refs/heads/$branch" &>/dev/null; then
-                default_branch="$branch"
-                break
-            fi
-        done
+        log_error "无法从远程仓库获取默认分支: $repo_url"
+        return 1
     fi
 
     echo "$default_branch"
@@ -194,12 +194,13 @@ sync_one_submodule() {
     log_info "    仓库: $submodule_url"
 
     # 自动检测默认分支
-    local submodule_branch=$(get_default_branch "$submodule_url")
-    if [ -z "$submodule_branch" ]; then
-        log_error "    无法检测默认分支，跳过 $submodule_name"
+    local submodule_branch
+    submodule_branch=$(get_default_branch "$submodule_url")
+    if [ $? -ne 0 ] || [ -z "$submodule_branch" ]; then
+        log_error "    自动检测分支失败，跳过 $submodule_name"
         return 1
     fi
-    log_info "    检测到分支: $submodule_branch"
+    log_info "    检测到默认分支: $submodule_branch"
 
     # 检查子模块目录是否存在
     if [ ! -d "$full_submodule_path" ]; then
