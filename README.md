@@ -92,3 +92,13 @@ This project has adopted the [Code of Conduct](CODE_OF_CONDUCT.md) to foster a w
 ---
 
 ![Star History Chart](https://api.star-history.com/svg?repos=Roboparty/roboto_origin&type=Date)
+
+---
+
+## Contributors
+
+Thanks to all the people who contribute to this project!
+
+<a href="https://github.com/Roboparty/roboto_origin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Roboparty/roboto_origin" alt="Contributors"/>
+</a>
