@@ -117,3 +117,13 @@ git pull
 ---
 
 ![Star History Chart](https://api.star-history.com/svg?repos=Roboparty/roboto_origin&type=Date)
+
+---
+
+## 贡献者
+
+感谢所有为项目做出贡献的人员！
+
+<a href="https://github.com/Roboparty/roboto_origin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Roboparty/roboto_origin" alt="贡献者"/>
+</a>
