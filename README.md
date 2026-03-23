@@ -81,6 +81,13 @@ Navigate to each module directory `modules/...` and follow the README inside eac
 
 ---
 
+## FAQ
+
+### Is prior robotics experience required?
+Basic knowledge of Linux and ROS2 is helpful, but the documentation is designed to be beginner-friendly. Start with the [documentation site](https://roboparty.com/roboto_origin/doc).
+
+---
+
 ## Code of Conduct
 
 This project has adopted the [Code of Conduct](CODE_OF_CONDUCT.md) to foster a welcoming and inclusive community. All contributors and users are expected to adhere to these guidelines.
