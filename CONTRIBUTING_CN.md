@@ -110,22 +110,6 @@ git push origin feature/your-feature-name
 
 4. 按照各模块中的 README 说明操作
 
-### 对于维护者
-
-使用 `sync_subtrees.sh` 脚本更新快照：
-
-```bash
-./sync_subtrees.sh
-```
-
-该脚本会：
-- 从所有子仓库拉取最新更改
-- 更新 `modules/` 目录中的子树快照
-- 将所有子模块代码展平为可追踪文件
-- 提交更新的快照
-
-脚本每日运行以保持主仓库同步。
-
 ## 社区准则
 
 - 在所有互动中保持尊重和建设性

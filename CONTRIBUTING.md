@@ -110,22 +110,6 @@ If you want to use or build upon the ROBOTO_ORIGIN project:
 
 4. Follow README instructions in each module
 
-### For Maintainers
-
-The `sync_subtrees.sh` script is used to update the snapshot:
-
-```bash
-./sync_subtrees.sh
-```
-
-This script:
-- Pulls latest changes from all sub-repositories
-- Updates subtree snapshots in `modules/` directory
-- Flattens all submodule code into trackable files
-- Commits the updated snapshot
-
-The script runs daily to keep the main repository synchronized.
-
 ## Community Guidelines
 
 - Be respectful and constructive in all interactions
