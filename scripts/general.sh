@@ -2102,4 +2102,14 @@ install_ros2() {
             chroot "${SDCARD}" chown orangepi:orangepi /home/orangepi/.bashrc
         fi
     fi
+
+    if [[ $BUILD_ROBOPARTY_PACKAGES == yes ]]; then
+        display_alert "Installing" "RoboParty Packages" "info"
+        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://10.43.0.115/apt/ robopi2 main" > "${SDCARD}/etc/apt/sources.list.d/roboparty.list"
+
+        curl -fsSL http://10.43.0.115/apt/roboparty.gpg | gpg --dearmor --yes -o "${SDCARD}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+
+        chroot "${SDCARD}" /bin/bash -c "apt-get update"
+        chroot "${SDCARD}" /bin/bash -c "apt-get install -y roboto-all"
+    fi
 }
