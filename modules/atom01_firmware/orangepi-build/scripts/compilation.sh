@@ -288,6 +288,7 @@ compile_uboot()
 	DIR=/usr/lib/$uboot_name
 	$(declare -f write_uboot_platform)
 	$(declare -f write_uboot_platform_mtd)
+	$(declare -f write_uboot_platform_ufs)
 	$(declare -f setup_write_uboot_platform)
 	EOF
 
@@ -455,7 +456,7 @@ CUSTOM_KERNEL_CONFIG
 	cp "$EXTER"/patch/misc/headers-debian-byteshift.patch /tmp
 
 	if [[ $KERNEL_CONFIGURE != yes ]]; then
-		if [[ $BRANCH == legacy && ! $BOARDFAMILY =~ "rockchip-rk3588"|"rockchip-rk356x" ]]; then
+		if [[ $BRANCH == legacy && ! $BOARDFAMILY =~ "rockchip-rk3588"|"rockchip-rk356x"|"sun60iw2" ]]; then
 			eval CCACHE_BASEDIR="$(pwd)" env PATH="${toolchain}:${PATH}" \
 				'make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" silentoldconfig'
 		else
@@ -523,6 +524,11 @@ CUSTOM_KERNEL_CONFIG
 	#if [[ $BRANCH == legacy && $LINUXFAMILY =~ sun50iw2|sun50iw6|sun50iw9 ]]; then
 	#	make -C modules/gpu LICHEE_MOD_DIR=${SRC}/.tmp/gpu_modules_${LINUXFAMILY} LICHEE_KDIR=${kerneldir} CROSS_COMPILE=$toolchain/$KERNEL_COMPILER ARCH=$ARCHITECTURE
 	#fi
+
+	if [[ $LINUXFAMILY =~ sun60iw2 ]]; then
+		make -C bsp/modules/gpu LICHEE_TOOLCHAIN_PATH=$toolchain LICHEE_CROSS_COMPILER=$KERNEL_COMPILER LICHEE_PLATFORM=linux LICHEE_MOD_DIR=${SRC}/.tmp/gpu_modules_${LINUXFAMILY} LICHEE_KERN_DIR=${kerneldir} CROSS_COMPILE=$toolchain/$KERNEL_COMPILER ARCH=$ARCHITECTURE
+		make -C bsp/modules/gpu modules_install LICHEE_TOOLCHAIN_PATH=$toolchain LICHEE_CROSS_COMPILER=$KERNEL_COMPILER LICHEE_PLATFORM=linux LICHEE_MOD_DIR=${SRC}/.tmp/gpu_modules_${LINUXFAMILY} LICHEE_KERN_DIR=${kerneldir} CROSS_COMPILE=$toolchain/$KERNEL_COMPILER ARCH=$ARCHITECTURE
+	fi
 
 	display_alert "Creating packages"
 
@@ -602,9 +608,9 @@ compile_firmware()
 	mkdir -p "${firmwaretempdir}/${plugin_dir}/lib/firmware"
 
 	if [[ $GITEE_SERVER == yes ]]; then
-		[[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://gitee.com/orangepi-xunlong/firmware" "${EXTER}/cache/sources/orangepi-firmware-git" "branch:master"
+		[[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://gitee.com/wentywenty/firmware" "${EXTER}/cache/sources/orangepi-firmware-git" "branch:master"
 	else
-		[[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://github.com/orangepi-xunlong/firmware" "${EXTER}/cache/sources/orangepi-firmware-git" "branch:master"
+		[[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://github.com/wentywenty/firmware" "${EXTER}/cache/sources/orangepi-firmware-git" "branch:master"
 	fi
 
 	if [[ -n $FULL ]]; then
@@ -862,43 +868,78 @@ compile_ethercat_igh()
     display_alert "ethercat-igh package built successfully" "" "info"
 }
 
-compile_bms_daemon()
-{
-    local work_dir
-    work_dir="${EXTER}/cache/sources/bms_daemon"
+# compile_f81601a()
+# {
+# 	local work_dir
+# 	work_dir="${EXTER}/cache/sources/f81601a-deb"
 
-    display_alert "Building" "bms-daemon DEB package" "info"
+# 	display_alert "Building" "f81601a DEB package" "info"
 
-    # Fetch bms_daemon source if needed
-    [[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://github.com/wentywenty/bms_daemon.git" "$work_dir" "branch:main"
+# 	# Fetch f81601a-deb source if needed
+# 	[[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://github.com/wentywenty/f81601a-deb.git" "$work_dir" "branch:master"
 
-    # Check if source exists
-    if [[ ! -d "$work_dir" ]]; then
-        exit_with_error "bms_daemon source not found" "$work_dir"
-    fi
+# 	# Check if source exists
+# 	if [[ ! -d "$work_dir" ]]; then
+# 		exit_with_error "f81601a-deb source not found" "$work_dir"
+# 	fi
 
-    # Setup cross-compilation prefix if building on amd64
-    local cross_prefix=""
-    local toolchain=""
-    if [[ $(dpkg --print-architecture) == amd64 ]]; then
-        toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
-        [[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
-        cross_prefix="${KERNEL_COMPILER}"
-        display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH="${toolchain}:${PATH}" "${KERNEL_COMPILER}gcc" -dumpversion)" "info"
-    fi
+# 	# Find toolchain path for cross-compilation
+# 	local toolchain=""
+# 	if [[ $(dpkg --print-architecture) == amd64 ]]; then
+# 		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
+# 		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
+# 		display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH=\"${toolchain}:${PATH}\" \"${KERNEL_COMPILER}gcc\" -dumpversion)" "info"
+# 	fi
 
-    # Run build_deb.sh with cross-compilation settings
-    cd "$work_dir"
-    env PATH="${toolchain}:${PATH}" CROSS_PREFIX="${cross_prefix}" ARCH="arm64" \
-        bash "$work_dir/build_deb.sh" || exit_with_error "bms-daemon build failed"
+# 	# Build package using upstream build script
+# 	env PATH="${toolchain}:${PATH}" bash "$work_dir/build.sh" "$KERNEL_COMPILER" "${LINUXSOURCEDIR}" "${ARCH}" || \
+# 		exit_with_error "f81601a build failed"
 
-    # Copy generated deb to DEB storage
-    display_alert "Copying" "bms-daemon to DEB storage" "info"
-    [[ -d "${DEB_STORAGE}" ]] || mkdir -p "${DEB_STORAGE}"
-    cp "$work_dir"/bms-daemon_*.deb "${DEB_STORAGE}/" || true
+# 	# Copy generated deb to DEB storage
+# 	display_alert "Copying" "f81601a to DEB storage" "info"
+# 	[[ -d "${DEB_STORAGE}" ]] || mkdir -p "${DEB_STORAGE}"
+# 	cp "$work_dir"/output/*.deb "${DEB_STORAGE}/" || true
 
-    display_alert "bms-daemon package built successfully" "" "info"
-}
+# 	display_alert "f81601a package built successfully" "" "info"
+# }
+
+# compile_bms_daemon()
+# {
+#     local work_dir
+#     work_dir="${EXTER}/cache/sources/bms_daemon"
+
+#     display_alert "Building" "bms-daemon DEB package" "info"
+
+#     # Fetch bms_daemon source if needed
+#     [[ $IGNORE_UPDATES != yes ]] && fetch_from_repo "https://github.com/wentywenty/bms_daemon.git" "$work_dir" "branch:main"
+
+#     # Check if source exists
+#     if [[ ! -d "$work_dir" ]]; then
+#         exit_with_error "bms_daemon source not found" "$work_dir"
+#     fi
+
+#     # Setup cross-compilation prefix if building on amd64
+#     local cross_prefix=""
+#     local toolchain=""
+#     if [[ $(dpkg --print-architecture) == amd64 ]]; then
+#         toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
+#         [[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
+#         cross_prefix="${KERNEL_COMPILER}"
+#         display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH="${toolchain}:${PATH}" "${KERNEL_COMPILER}gcc" -dumpversion)" "info"
+#     fi
+
+#     # Run build_deb.sh with cross-compilation settings
+#     cd "$work_dir"
+#     env PATH="${toolchain}:${PATH}" CROSS_PREFIX="${cross_prefix}" ARCH="arm64" \
+#         bash "$work_dir/build_deb.sh" || exit_with_error "bms-daemon build failed"
+
+#     # Copy generated deb to DEB storage
+#     display_alert "Copying" "bms-daemon to DEB storage" "info"
+#     [[ -d "${DEB_STORAGE}" ]] || mkdir -p "${DEB_STORAGE}"
+#     cp "$work_dir"/bms-daemon_*.deb "${DEB_STORAGE}/" || true
+
+#     display_alert "bms-daemon package built successfully" "" "info"
+# }
 
 compile_sunxi_tools()
 {
