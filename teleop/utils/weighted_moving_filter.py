@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class WeightedMovingFilter:
@@ -41,6 +40,8 @@ class WeightedMovingFilter:
 
 def visualize_filter_comparison(filter_params, steps):
     import time
+    import matplotlib.pyplot as plt
+
     t = np.linspace(0, 4 * np.pi, steps)
     original_data = np.array([np.sin(t + i) + np.random.normal(0, 0.2, len(t)) for i in range(35)]).T  # sin wave with noise, shape is [len(t), 35]
 
