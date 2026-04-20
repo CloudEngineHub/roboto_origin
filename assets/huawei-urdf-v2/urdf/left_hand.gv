@@ -1,0 +1,95 @@
+digraph G {
+node [shape=box];
+"left_hand_base_link" [label="left_hand_base_link"];
+"l_index_Link" [label="l_index_Link"];
+"l_index_Link1" [label="l_index_Link1"];
+"l_index_Link2" [label="l_index_Link2"];
+"l_index_Link3" [label="l_index_Link3"];
+"l_index_Link4" [label="l_index_Link4"];
+"l_index_Link5" [label="l_index_Link5"];
+"l_little_Link" [label="l_little_Link"];
+"l_little_Link1" [label="l_little_Link1"];
+"l_little_Link2" [label="l_little_Link2"];
+"l_little_Link3" [label="l_little_Link3"];
+"l_little_Link4" [label="l_little_Link4"];
+"l_little_Link5" [label="l_little_Link5"];
+"l_mid_Link" [label="l_mid_Link"];
+"l_mid_Link1" [label="l_mid_Link1"];
+"l_mid_Link2" [label="l_mid_Link2"];
+"l_mid_Link3" [label="l_mid_Link3"];
+"l_mid_Link4" [label="l_mid_Link4"];
+"l_mid_Link5" [label="l_mid_Link5"];
+"l_ring_Link" [label="l_ring_Link"];
+"l_ring_Link1" [label="l_ring_Link1"];
+"l_ring_Link2" [label="l_ring_Link2"];
+"l_ring_Link3" [label="l_ring_Link3"];
+"l_ring_Link4" [label="l_ring_Link4"];
+"l_ring_Link5" [label="l_ring_Link5"];
+"l_thumb_Link" [label="l_thumb_Link"];
+"l_thumb_Link1" [label="l_thumb_Link1"];
+"l_thumb_Link2" [label="l_thumb_Link2"];
+"l_thumb_Link3" [label="l_thumb_Link3"];
+"l_thumb_Link4" [label="l_thumb_Link4"];
+"l_thumb_Link5" [label="l_thumb_Link5"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"left_hand_base_link" -> "index_joint_Link" [label="xyz: 0.00364999 -0.0375052 0.0837021 \nrpy: 3.14159 -1.48353 0"]
+"index_joint_Link" -> "l_index_Link"
+"l_index_Link" -> "index_joint_Link1" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"index_joint_Link1" -> "l_index_Link1"
+"l_index_Link1" -> "index_joint_Link2" [label="xyz: 0.0026697 0 0 \nrpy: 1.5708 0.0927124 0"]
+"index_joint_Link2" -> "l_index_Link2"
+"l_index_Link2" -> "index_joint_Link3" [label="xyz: 0.0519964 0 0 \nrpy: 0 0 -0.186735"]
+"index_joint_Link3" -> "l_index_Link3"
+"l_index_Link3" -> "index_joint_Link4" [label="xyz: 0.0279997 0 0 \nrpy: 0 -0 0.847653"]
+"index_joint_Link4" -> "l_index_Link4"
+"l_index_Link4" -> "index_joint_Link5" [label="xyz: 0.0192147 0 0 \nrpy: 0 -0 0"]
+"index_joint_Link5" -> "l_index_Link5"
+"left_hand_base_link" -> "little_joint_link" [label="xyz: 0.00816534 0.0381711 0.0747022 \nrpy: 3.14159 -1.48353 -0.174533"]
+"little_joint_link" -> "l_little_Link"
+"l_little_Link" -> "little_joint_Link1" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"little_joint_Link1" -> "l_little_Link1"
+"l_little_Link1" -> "little_joint_Link2" [label="xyz: 0.0026697 0 0 \nrpy: 1.5708 0.075432 0"]
+"little_joint_Link2" -> "l_little_Link2"
+"l_little_Link2" -> "little_joint_Link3" [label="xyz: 0.0519964 0 0 \nrpy: 0 0 -0.186781"]
+"little_joint_Link3" -> "l_little_Link3"
+"l_little_Link3" -> "little_joint_Link4" [label="xyz: 0.028 0 0 \nrpy: 0 -0 0.847728"]
+"little_joint_Link4" -> "l_little_Link4"
+"l_little_Link4" -> "little_joint_Link5" [label="xyz: 0.0192147 0 0 \nrpy: 0 -0 0"]
+"little_joint_Link5" -> "l_little_Link5"
+"left_hand_base_link" -> "mid_joint_Link" [label="xyz: 0.00364999 -0.0125052 0.0937021 \nrpy: 3.14159 -1.48353 0"]
+"mid_joint_Link" -> "l_mid_Link"
+"l_mid_Link" -> "mid_joint_Link1" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"mid_joint_Link1" -> "l_mid_Link1"
+"l_mid_Link1" -> "mid_joint_Link2" [label="xyz: 0.0026697 0 0 \nrpy: 1.5708 0.0925953 0"]
+"mid_joint_Link2" -> "l_mid_Link2"
+"l_mid_Link2" -> "mid_joint_Link3" [label="xyz: 0.0519964 0 0 \nrpy: 0 0 -0.186782"]
+"mid_joint_Link3" -> "l_mid_Link3"
+"l_mid_Link3" -> "mid_joint_Link4" [label="xyz: 0.028 0 0 \nrpy: 0 -0 0.847704"]
+"mid_joint_Link4" -> "l_mid_Link4"
+"l_mid_Link4" -> "mid_joint_Link5" [label="xyz: 0.0192147 0 0 \nrpy: 0 -0 0"]
+"mid_joint_Link5" -> "l_mid_Link5"
+"left_hand_base_link" -> "ring_joint_Link" [label="xyz: 0.00481003 0.0129964 0.0887021 \nrpy: 3.14159 -1.48353 -0.0873783"]
+"ring_joint_Link" -> "l_ring_Link"
+"l_ring_Link" -> "ring_joint_Link1" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"ring_joint_Link1" -> "l_ring_Link1"
+"l_ring_Link1" -> "ring_joint_Link2" [label="xyz: 0.0026697 0 0 \nrpy: 1.5708 0.0927124 0"]
+"ring_joint_Link2" -> "l_ring_Link2"
+"l_ring_Link2" -> "ring_joint_Link3" [label="xyz: 0.0519964 0 0 \nrpy: 0 0 -0.186825"]
+"ring_joint_Link3" -> "l_ring_Link3"
+"l_ring_Link3" -> "ring_joint_Link4" [label="xyz: 0.028 0 0 \nrpy: 0 -0 0.847686"]
+"ring_joint_Link4" -> "l_ring_Link4"
+"l_ring_Link4" -> "ring_joint_Link5" [label="xyz: 0.0192147 0 0 \nrpy: 0 -0 0"]
+"ring_joint_Link5" -> "l_ring_Link5"
+"left_hand_base_link" -> "thumb_joint_Link" [label="xyz: 0.0404524 -0.0366806 0.0626366 \nrpy: -0.258032 -1.0317 -0.320095"]
+"thumb_joint_Link" -> "l_thumb_Link"
+"l_thumb_Link" -> "thumb_joint_Link1" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"thumb_joint_Link1" -> "l_thumb_Link1"
+"l_thumb_Link1" -> "thumb_joint_Link2" [label="xyz: 0.0026697 0 0 \nrpy: 1.5708 0.0927124 -6.96882e-18"]
+"thumb_joint_Link2" -> "l_thumb_Link2"
+"l_thumb_Link2" -> "thumb_joint_Link3" [label="xyz: 0.0519964 0 0 \nrpy: 0 0 -0.186735"]
+"thumb_joint_Link3" -> "l_thumb_Link3"
+"l_thumb_Link3" -> "thumb_joint_Link4" [label="xyz: 0.0279998 0 0 \nrpy: 0 -0 0.847655"]
+"thumb_joint_Link4" -> "l_thumb_Link4"
+"l_thumb_Link4" -> "thumb_joint_Link5" [label="xyz: 0.0192147 0 0 \nrpy: 0 -0 0"]
+"thumb_joint_Link5" -> "l_thumb_Link5"
+}
