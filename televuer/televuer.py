@@ -92,6 +92,16 @@ class TeleVuer:
     def vuer_run(self):
         self.vuer.run()
 
+    def shutdown(self, timeout: float = 1.0) -> None:
+        if not self.process.is_alive():
+            return
+
+        self.process.terminate()
+        self.process.join(timeout=timeout)
+        if self.process.is_alive():
+            self.process.kill()
+            self.process.join(timeout=timeout)
+
     async def on_cam_move(self, event, session, fps=60):
         try:
             with self.head_pose_shared.get_lock():
@@ -211,7 +221,7 @@ class TeleVuer:
                     ImageBackground(
                         # display_image[:, :self.img_width],
                         aspect=1.778,
-                        height=1,
+                        height=0.001,
                         distanceToCamera=1,
                         # The underlying rendering engine supported a layer binary bitmask for both objects and the camera. 
                         # Below we set the two image planes, left and right, to layers=1 and layers=2. 
@@ -225,7 +235,7 @@ class TeleVuer:
                     ImageBackground(
                         # display_image[:, self.img_width:],
                         aspect=1.778,
-                        height=1,
+                        height=0.001,
                         distanceToCamera=1,
                         layers=2,
                         format="jpeg",

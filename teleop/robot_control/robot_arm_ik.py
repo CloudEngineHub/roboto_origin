@@ -135,13 +135,20 @@ class Atom_23_ArmIK:
         opts = {
             "ipopt": {
                 "print_level": 0,
-                "max_iter": 50,
-                "tol": 1e-6,
+                "max_iter": 20,
+                "tol": 1e-4,
             },
             "print_time": False,
             "calc_lam_p": False,
         }
         self.opti.solver("ipopt", opts)
+        self.max_iter = opts["ipopt"]["max_iter"]
+        self.tol = opts["ipopt"]["tol"]
+        self.last_solver_stats = {
+            "iter_count": 0,
+            "return_status": "NOT_RUN",
+            "success": False,
+        }
 
         self.init_data = np.zeros(self.reduced_robot.model.nq)
         self.smooth_filter = WeightedMovingFilter(np.array([0.4, 0.3, 0.2, 0.1]), 10)
@@ -227,6 +234,12 @@ class Atom_23_ArmIK:
 
         try:
             self.opti.solve()
+            stats = self.opti.stats()
+            self.last_solver_stats = {
+                "iter_count": stats.get("iter_count", 0),
+                "return_status": stats.get("return_status", "UNKNOWN"),
+                "success": stats.get("success", False),
+            }
             sol_q = self.opti.value(self.var_q)
             self.smooth_filter.add_data(sol_q)
             sol_q = self.smooth_filter.filtered_data
@@ -250,6 +263,19 @@ class Atom_23_ArmIK:
 
             return sol_q, sol_tauff
         except Exception as exc:
+            try:
+                stats = self.opti.stats()
+                self.last_solver_stats = {
+                    "iter_count": stats.get("iter_count", 0),
+                    "return_status": stats.get("return_status", "FAILED"),
+                    "success": stats.get("success", False),
+                }
+            except Exception:
+                self.last_solver_stats = {
+                    "iter_count": self.max_iter,
+                    "return_status": "FAILED_NO_STATS",
+                    "success": False,
+                }
             logger_mp.error(f"IK solve failed, using current joints. {exc}")
 
             if current_lr_arm_motor_q is None:

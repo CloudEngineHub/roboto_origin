@@ -4,7 +4,6 @@ import os
 import sys
 import threading
 import time
-from threading import Lock
 
 import logging_mp
 import numpy as np
@@ -56,24 +55,7 @@ listen_keyboard_thread.start()
 class ArmController(Node):
     def __init__(self) -> None:
         super().__init__("arm_controller")
-        self.lock = Lock()
         self.arm_pub = self.create_publisher(JointState, "/joint_ref_states", 10)
-        self.left_arm_sub = self.create_subscription(
-            JointState, "/joint_states_left_arm", self.left_arm_callback, 10
-        )
-        self.right_arm_sub = self.create_subscription(
-            JointState, "/joint_states_right_arm", self.right_arm_callback, 10
-        )
-        self.left_arm_states = None
-        self.right_arm_states = None
-
-    def left_arm_callback(self, msg: JointState) -> None:
-        with self.lock:
-            self.left_arm_states = msg
-
-    def right_arm_callback(self, msg: JointState) -> None:
-        with self.lock:
-            self.right_arm_states = msg
 
     def send_commands(self, sol_q: np.ndarray, sol_tauff: np.ndarray) -> None:
         msg = JointState()
@@ -98,37 +80,14 @@ class ArmController(Node):
         command_tau[4] = 0.0
         command_tau[9] = 0.0
 
-        left_offset = np.array([0.18, 0.06, 0.0, 0.78, 0.0])
-        right_offset = np.array([0.18, -0.06, 0.0, 0.78, 0.0])
-        total_offset = np.concatenate([left_offset, right_offset])
-
-        msg.position = (command_q - total_offset).tolist()
+        msg.position = command_q.tolist()
         msg.velocity = [0.0] * 10
         msg.effort = command_tau.tolist()
         self.arm_pub.publish(msg)
 
-    def get_current_dual_arm_q(self) -> np.ndarray:
-        with self.lock:
-            if self.left_arm_states is None or self.right_arm_states is None:
-                return np.zeros(10)
-
-            def parse_arm_q(arm_states: JointState, prefix: str) -> list[float]:
-                arm_q = [0.0] * 5
-                for index, name in enumerate(arm_states.name):
-                    if not name.startswith(prefix):
-                        continue
-                    joint_index = int(name.replace(prefix, ""))
-                    if joint_index < 5:
-                        arm_q[joint_index] = arm_states.position[index]
-                return arm_q
-
-            left_q = parse_arm_q(self.left_arm_states, "left_motor")
-            right_q = parse_arm_q(self.right_arm_states, "right_motor")
-            return np.array(left_q + right_q)
-
 
 def main() -> int:
-    global should_send_commands
+    global running, should_send_commands
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -149,8 +108,27 @@ def main() -> int:
         action="store_true",
         help="Disable IK visualization.",
     )
+    parser.add_argument(
+        "--profile-loop",
+        action="store_true",
+        help="Log control-loop timing statistics.",
+    )
     args = parser.parse_args()
     logger_mp.info("args: %s", args)
+    last_debug_log_time = 0.0
+    last_profile_log_time = 0.0
+    profile_stats = {
+        "loop_count": 0,
+        "motion_total": 0.0,
+        "ik_total": 0.0,
+        "send_total": 0.0,
+        "loop_total": 0.0,
+        "iter_total": 0,
+        "iter_max": 0,
+        "hit_max_count": 0,
+    }
+    arm_controller = None
+    tv_wrapper = None
 
     rclpy.init()
     arm_controller = ArmController()
@@ -167,14 +145,17 @@ def main() -> int:
             time.sleep(0.01)
 
         while running:
+            if not rclpy.ok():
+                logger_mp.info("ROS context is no longer valid. Exiting main loop.")
+                break
+
             start_time = time.time()
-            rclpy.spin_once(arm_controller, timeout_sec=0.001)
+            motion_start_time = time.time()
 
             tele_data = tv_wrapper.get_motion_state_data()
+            motion_duration = time.time() - motion_start_time
             if tele_data is None:
                 continue
-
-            current_lr_arm_q = arm_controller.get_current_dual_arm_q()
 
             if tele_data.tele_state.right_aButton:
                 should_send_commands = True
@@ -183,24 +164,98 @@ def main() -> int:
                 should_send_commands = False
                 logger_mp.info("Right controller B pressed. Command streaming disabled.")
 
+            ik_start_time = time.time()
             sol_q, sol_tauff = arm_ik.solve_ik(
                 tele_data.left_arm_pose,
                 tele_data.right_arm_pose,
-                current_lr_arm_motor_q=current_lr_arm_q,
             )
+            ik_duration = time.time() - ik_start_time
 
+            if time.time() - last_debug_log_time >= 0.5:
+                logger_mp.info(
+                    "IK result q=%s tau=%s should_send=%s",
+                    np.round(sol_q, 4).tolist(),
+                    np.round(sol_tauff, 4).tolist(),
+                    should_send_commands,
+                )
+                last_debug_log_time = time.time()
+
+            send_duration = 0.0
             if should_send_commands:
+                send_start_time = time.time()
                 arm_controller.send_commands(sol_q, sol_tauff)
+                send_duration = time.time() - send_start_time
+
+            loop_duration = time.time() - start_time
+
+            if args.profile_loop:
+                iter_count = int(arm_ik.last_solver_stats.get("iter_count", 0))
+                profile_stats["loop_count"] += 1
+                profile_stats["motion_total"] += motion_duration
+                profile_stats["ik_total"] += ik_duration
+                profile_stats["send_total"] += send_duration
+                profile_stats["loop_total"] += loop_duration
+                profile_stats["iter_total"] += iter_count
+                profile_stats["iter_max"] = max(profile_stats["iter_max"], iter_count)
+                if iter_count >= arm_ik.max_iter:
+                    profile_stats["hit_max_count"] += 1
+
+                if time.time() - last_profile_log_time >= 1.0:
+                    loop_count = profile_stats["loop_count"]
+                    avg_motion_ms = profile_stats["motion_total"] / loop_count * 1000.0
+                    avg_ik_ms = profile_stats["ik_total"] / loop_count * 1000.0
+                    avg_send_ms = profile_stats["send_total"] / loop_count * 1000.0
+                    avg_loop_ms = profile_stats["loop_total"] / loop_count * 1000.0
+                    avg_hz = loop_count / profile_stats["loop_total"] if profile_stats["loop_total"] > 0.0 else 0.0
+                    avg_iter = profile_stats["iter_total"] / loop_count
+                    logger_mp.info(
+                        (
+                            "Loop timing avg over %d iters: motion=%.2f ms, "
+                            "ik=%.2f ms, send=%.2f ms, loop=%.2f ms, rate=%.2f Hz, "
+                            "ipopt_iter_avg=%.2f, ipopt_iter_max=%d, "
+                            "ipopt_hit_max=%d/%d, ipopt_last_status=%s"
+                        ),
+                        loop_count,
+                        avg_motion_ms,
+                        avg_ik_ms,
+                        avg_send_ms,
+                        avg_loop_ms,
+                        avg_hz,
+                        avg_iter,
+                        profile_stats["iter_max"],
+                        profile_stats["hit_max_count"],
+                        loop_count,
+                        arm_ik.last_solver_stats.get("return_status", "UNKNOWN"),
+                    )
+                    profile_stats = {
+                        "loop_count": 0,
+                        "motion_total": 0.0,
+                        "ik_total": 0.0,
+                        "send_total": 0.0,
+                        "loop_total": 0.0,
+                        "iter_total": 0,
+                        "iter_max": 0,
+                        "hit_max_count": 0,
+                    }
+                    last_profile_log_time = time.time()
 
             sleep_time = max(0.0, (1.0 / args.frequency) - (time.time() - start_time))
             time.sleep(sleep_time)
     except KeyboardInterrupt:
         logger_mp.info("KeyboardInterrupt received, exiting.")
     finally:
+        stop_listening()
         if listen_keyboard_thread.is_alive():
             listen_keyboard_thread.join(timeout=1.0)
-        arm_controller.destroy_node()
-        rclpy.shutdown()
+
+        if tv_wrapper is not None:
+            tv_wrapper.shutdown()
+
+        if arm_controller is not None:
+            arm_controller.destroy_node()
+
+        if rclpy.ok():
+            rclpy.shutdown()
 
     logger_mp.info("Program exited cleanly.")
     return 0

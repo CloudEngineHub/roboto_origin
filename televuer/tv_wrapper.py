@@ -224,6 +224,9 @@ class TeleVuerWrapper:
         self.return_hand_rot_data = return_hand_rot_data
         self.tvuer = TeleVuer( use_hand_tracking,  cert_file=cert_file, key_file=key_file,
                                 ngrok=ngrok, webrtc=webrtc)
+
+    def shutdown(self, timeout: float = 1.0) -> None:
+        self.tvuer.shutdown(timeout=timeout)
     
     def get_motion_state_data(self):
         """
