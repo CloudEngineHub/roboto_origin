@@ -79,6 +79,60 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.pem -out cert.pe
 sudo ufw allow 8012
 ```
 
+## 机器人侧平衡 Policy
+
+本项目负责 `VR -> 上半身遥操作` 控制链路。真机运行时，人形机器人本体仍需要底层 `policy` 负责站立与平衡控制，因此通常需要配合 [`atom01_deploy`](https://github.com/Roboparty/atom01_deploy) 一起使用。
+
+如果需要切换机器人底层策略模型，请先修改 `atom01_deploy` 中的 `src/inference/launch/inference.launch.py`，把加载的配置文件改成目标 policy：
+
+```python
+configs = [
+    os.path.join(
+        get_package_share_directory("inference"),
+        "config",
+        "inference_interrupt.yaml",
+    ),
+]
+```
+
+常见可选配置文件包括：
+
+- `inference_amp.yaml`
+- `inference_attn_enc.yaml`
+- `inference_beyondmimic.yaml`
+- `inference_getup.yaml`
+- `inference_interrupt.yaml`
+
+本项目当前建议使用：
+
+- `inference_interrupt.yaml`
+
+修改完成后，重新运行 `./tools/start_robot.sh`，机器人启动时就会加载对应配置，并使用相应的底层 policy。
+
+详细说明请参考 [`atom01_deploy` 的 README_CN](https://github.com/Roboparty/atom01_deploy/blob/main/README_CN.md)。
+
+机器人侧遥控器按键操作也请参考该文档。结合本项目，主要会用到下面几个按键：
+
+- `X`：使能 / 失能电机
+- `A`：复位
+- `B`：进入推理模式。进入后机器人可以保持平衡并正常行走，但此时上半身控制接口还没有暴露给 VR 遥操作
+- `LB`：将上半身控制接口暴露给 VR 遥操作
+
+推荐的真机联调流程如下：
+
+1. 在机器人侧启动 `atom01_deploy`，并确认已经加载 `inference_interrupt.yaml`
+2. 使用机器人遥控器按 `X` 使能电机，按 `A` 让机器人复位
+3. 按遥控器 `B` 进入推理模式，确认机器人已经能够稳定站立、保持平衡并正常行走
+4. 在本仓库中启动 VR 遥操作程序，并按照下文流程完成 PICO 连接，使仿真机器人开始跟随操作者动作
+5. 先不要立即把真机暴露给 VR，先观察仿真机器人与真机机器人的上半身姿态，尽量让两者接近
+6. 当仿真机器人和真机机器人姿态已经基本对齐后，按机器人遥控器的 `LB`，将上半身控制接口暴露给 VR
+7. 最后在 VR 遥操作端继续执行到按下 VR controller 的 `A`，开始向真机发送上半身控制命令
+
+也就是说，真机真正进入上半身遥操作，需要同时满足两边条件：
+
+- 机器人侧已经按下遥控器 `LB`，允许 VR 接管上半身接口
+- 遥操作侧已经按下 VR controller 的 `A`，开始发送控制命令
+
 ## 启动
 
 在仓库根目录执行：
