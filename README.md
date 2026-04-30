@@ -31,10 +31,12 @@ Select board during build:
 
 **Recommended Kernel Version**: `current`
 
+
 ## Download links
 
 - 中文链接：     http://www.orangepi.cn
 - English link：http://www.orangepi.org
+- OrangePi 5 Plus User Manual: [OrangePi_5_Plus_RK3588_用户手册_v2.1.pdf](OrangePi_5_Plus_RK3588_%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C_v2.1.pdf) (See page 118 for system flashing instructions)
 
 ## Supported Host Systems
 - Ubuntu 22.04

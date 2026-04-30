@@ -214,7 +214,7 @@ install_common()
 			fi
 		fi
 
-		[[ -n $OVERLAY_PREFIX && -f "${SDCARD}"/boot/orangepiEnv.txt && ($BRANCH =~ current|next || $BOARDFAMILY =~ "rockchip-rk3588"|"rockchip-rk356x") ]] && \
+		[[ -n $OVERLAY_PREFIX && -f "${SDCARD}"/boot/orangepiEnv.txt && ($BRANCH =~ current|next || $BOARDFAMILY =~ "rockchip-rk3588"|"rockchip-rk356x"|"sun60iw2") ]] && \
 			echo "overlay_prefix=$OVERLAY_PREFIX" >> "${SDCARD}"/boot/orangepiEnv.txt
 
 		[[ -n $DEFAULT_OVERLAYS && -f "${SDCARD}"/boot/orangepiEnv.txt && ($BRANCH =~ current|next || $BOARDFAMILY =~ "rockchip-rk3588"|"rockchip-rk356x") ]] && \
@@ -771,7 +771,7 @@ install_distribution_specific()
 			[[ $(grep -L "VERSION=" "${SDCARD}"/etc/os-release) ]] && echo 'VERSION="11 (bookworm)"' >> "${SDCARD}"/etc/os-release
 
 			# remove security updates repository since it does not exists yet
-			sed '/security/ d' -i "${SDCARD}"/etc/apt/sources.list
+			# sed '/security/ d' -i "${SDCARD}"/etc/apt/sources.list
 
 		;;
 

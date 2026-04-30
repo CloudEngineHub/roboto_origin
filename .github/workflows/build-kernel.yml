@@ -1,0 +1,168 @@
+name: Build Kernel & IgH EtherCAT DEBs
+
+# ─────────────────────────────────────────────────────────────
+# 触发条件
+# ─────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'external/config/boards/robopi1.conf'
+      - 'external/config/boards/robopi2.conf'
+      - 'external/config/sources/families/rockchip-rk3588.conf'
+      - 'external/config/kernel/**'
+      - 'userpatches/kernel/**'
+      - 'scripts/compilation.sh'
+      - 'scripts/configuration.sh'
+      - '.github/workflows/build-kernel.yml'
+  pull_request:
+    paths:
+      - 'external/config/boards/robopi1.conf'
+      - 'external/config/boards/robopi2.conf'
+      - 'external/config/sources/families/rockchip-rk3588.conf'
+      - 'external/config/kernel/**'
+      - 'userpatches/kernel/**'
+  workflow_dispatch:
+
+# ─────────────────────────────────────────────────────────────
+# 环境变量
+# ─────────────────────────────────────────────────────────────
+
+jobs:
+  # ───────────────────────────────────────────────────────────
+  # 主构建任务：robopi1 & robopi2，current 分支（6.1.99）
+  # ───────────────────────────────────────────────────────────
+  build:
+    name: ${{ matrix.board }} / current (6.1.99)
+    runs-on: ubuntu-22.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [robopi1, robopi2]
+
+    steps:
+      # ── 1. 释放磁盘空间（必须在 checkout 之前，否则会覆盖工作区）──
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 1024
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      # ── 2. 拉取代码 ──────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 3. 安装构建依赖 ──────────────────────────────────────
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            acl aria2 bc binfmt-support binutils bison btrfs-progs \
+            build-essential ca-certificates ccache cpio cryptsetup-bin \
+            debian-archive-keyring debootstrap device-tree-compiler \
+            dialog dosfstools dwarves f2fs-tools fakeroot fdisk flex \
+            gawk gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf \
+            gcc-arm-linux-gnueabi gdisk git imagemagick jq kmod \
+            libbison-dev libelf-dev libfdt-dev libfile-fcntllock-perl \
+            libfl-dev liblz4-tool libncurses5-dev libssl-dev \
+            libusb-1.0-0-dev lsb-release lzop ncurses-base ncurses-term \
+            p7zip-full parted patchutils pigz pixz pkg-config psmisc \
+            pv python3 python3-dev python3-setuptools \
+            qemu-user-static rsync swig u-boot-tools unzip \
+            uuid uuid-dev uuid-runtime wget whiptail xxd zip zlib1g-dev \
+            autoconf automake libtool
+          sudo locale-gen en_US.UTF-8
+
+      # ── 4. 缓存内核源码 ───────────────────────────────────────
+      - name: Cache kernel source
+        id: cache-kernel
+
+        uses: actions/cache@v4
+        with:
+          path: kernel/
+          key: kernel-current-${{ hashFiles('external/config/sources/families/rockchip-rk3588.conf') }}
+          restore-keys: |
+            kernel-current-
+
+      # ── 5. 编译内核、头文件、设备树 DEB ─────────────────────
+      - name: Build kernel DEBs
+        run: |
+          sudo bash "$GITHUB_WORKSPACE/build.sh" \
+            BOARD=${{ matrix.board }} \
+            BRANCH=current \
+            BUILD_OPT=kernel \
+            KERNEL_CONFIGURE=no \
+            INSTALL_HEADERS=yes \
+            CLEAN_LEVEL="debs" \
+            USE_TORRENT=no \
+            DOWNLOAD_MIRROR="" \
+            build_rt_image=no \
+            NO_APT_CACHER=yes \
+            GITEE_SERVER=no \
+            IGNORE_UPDATES=${{ steps.cache-kernel.outputs.cache-hit == 'true' && 'yes' || 'no' }}
+
+      # ── 6. 克隆 igh-deb 源码（含 ethercat submodule）────────
+      - name: Clone igh-deb
+        run: |
+          git clone --depth=1 --recurse-submodules --shallow-submodules \
+            https://github.com/wentywenty/igh-deb.git \
+            external/cache/sources/igh-deb
+
+      # ── 8. 编译 IgH EtherCAT DEB ─────────────────────────────
+      # ARM64 native runner，直接用系统 aarch64-linux-gnu- 编译器
+      - name: Build IgH EtherCAT DEB
+        run: |
+          bash "$GITHUB_WORKSPACE/external/cache/sources/igh-deb/build.sh" \
+            "aarch64-linux-gnu-" \
+            "$GITHUB_WORKSPACE/kernel/orange-pi-6.1-rk35xx"
+          sudo cp "$GITHUB_WORKSPACE/external/cache/sources/igh-deb/output/ethercat-igh_"*.deb \
+             "$GITHUB_WORKSPACE/output/debs/"
+
+      # ── 9. 收集所有产物 ───────────────────────────────────────
+      - name: Collect DEBs
+        run: |
+          find output/debs -name "*.deb" | sort
+          echo "Total: $(find output/debs -name '*.deb' | wc -l) packages"
+
+      # ── 10. 上传 Artifacts ───────────────────────────────────
+      - name: Upload DEBs
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.board }}-current
+          path: output/debs/
+          if-no-files-found: error
+          retention-days: 30
+          
+      - name: Ensure zstd installed
+        run: sudo apt-get update && sudo apt-get install -y zstd
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04-arm
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-debs/
+          pattern: debs-*
+          merge-multiple: false
+
+      - name: List release files
+        run: find release-debs/ -name "*.deb" | sort
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-debs/**/*.deb
+          generate_release_notes: true
+          fail_on_unmatched_files: true
