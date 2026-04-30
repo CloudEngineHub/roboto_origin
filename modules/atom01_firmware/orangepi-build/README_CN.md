@@ -73,14 +73,18 @@ cd orangepi-build
 │   ├── cache/              # 包和源码缓存
 │   ├── config/             # 板卡和系统配置
 │   ├── extensions/         # 扩展脚本
-│   └── packages/           # 自定义包
-└── patch/                  # 内核和包的补丁
+└── └── packages/           # 自定义包
 ```
 
 ## 官方链接
 
 - 📌 **官方网站**：[Orange Pi](http://www.orangepi.org)
 - 🇨🇳 **中文官网**：[Orange Pi 中文](http://www.orangepi.cn)
+- 📖 **OrangePi 5 Plus 用户手册**：[OrangePi_5_Plus_RK3588_用户手册_v2.1.pdf](OrangePi_5_Plus_RK3588_%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C_v2.1.pdf)
+
+（烧录系统请参考第118页）
+
+镜像在release里面，建议使用最新镜像。
 
 ## 许可证
 

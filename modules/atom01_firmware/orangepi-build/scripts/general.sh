@@ -2079,14 +2079,14 @@ install_ros2() {
 
     display_alert "Installing" "ROS 2 Packages" "info"
 
-    chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev"
+    chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev joystick"
     chroot "${SDCARD}" /bin/bash -c "apt-get update --fix-missing"
     
-	chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev"
+	chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev joystick"
     chroot "${SDCARD}" /bin/bash -c "apt-get update --fix-missing"
-    chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev"
+    chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev joystick"
     chroot "${SDCARD}" /bin/bash -c "apt-get update --fix-missing"
-    chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev"
+    chroot "${SDCARD}" /bin/bash -c "apt-get install -y ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ccache libfmt-dev libspdlog-dev libeigen3-dev joystick"
 	
 	chroot "${SDCARD}" /bin/bash -c "apt-get remove brltty -y"
 
@@ -2105,11 +2105,39 @@ install_ros2() {
 
     if [[ $BUILD_ROBOPARTY_PACKAGES == yes ]]; then
         display_alert "Installing" "RoboParty Packages" "info"
-        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://10.43.0.115/apt/ robopi2 main" > "${SDCARD}/etc/apt/sources.list.d/roboparty.list"
+		# 根据板卡选择 apt 发行版名称和要安装的包
+        local roboparty_dist roboparty_pkgs
+        case "${BOARD}" in
+            robopi1)
+                roboparty_dist="robopi1"
+                roboparty_pkgs="roboto-all"
+                ;;
+            robopi2)
+                roboparty_dist="robopi2"
+                roboparty_pkgs="roboto-all"
+                ;;
+            robopi3)
+                roboparty_dist="robopi3"
+                roboparty_pkgs="roboto-all"
+                ;;
+            *)
+                display_alert "BUILD_ROBOPARTY_PACKAGES=yes but board '${BOARD}' has no RoboParty source defined, skipping" "" "wrn"
+                return 0
+                ;;
+        esac
 
-        curl -fsSL http://10.43.0.115/apt/roboparty.gpg | gpg --dearmor --yes -o "${SDCARD}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+        # 1. 先从公网下载最新的 GPG 钥匙，并写入镜像
+        curl -fsSL http://apt.roboparty.com:60012/roboparty.gpg | gpg --dearmor --yes -o "${SDCARD}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+
+        # 2. 写入 common 公共源 (覆盖写入 >)
+        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com:/ common main" \
+            > "${SDCARD}/etc/apt/sources.list.d/roboparty.list"
+
+        # 3. 写入特定板卡的源 (追加写入 >>)
+        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com/ ${roboparty_dist} main" \
+            >> "${SDCARD}/etc/apt/sources.list.d/roboparty.list"
 
         chroot "${SDCARD}" /bin/bash -c "apt-get update"
-        chroot "${SDCARD}" /bin/bash -c "apt-get install -y roboto-all"
+        chroot "${SDCARD}" /bin/bash -c "apt-get install -y ${roboparty_pkgs}"
     fi
 }
