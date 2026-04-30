@@ -9,7 +9,9 @@
 
 ## 概述
 
-本仓库提供了使用ROS2作为中间件的部署框架，并具有模块化架构，便于无缝定制和扩展。
+本仓库提供了使用 ROS2 作为中间件的部署框架，并具有模块化架构，便于无缝定制和扩展。
+
+开源地址：[https://github.com/Roboparty/atom01_deploy](https://github.com/Roboparty/atom01_deploy)
 
 **维护者**: 刘志浩
 **联系方式**: <ZhihaoLiu_hit@163.com>
@@ -25,21 +27,33 @@
 部署框架在 **Orange Pi 5 Plus** 与 **RDK X5** 上经过了充分验证。
 
 - **Orange Pi 5 Plus**: 系统为 `Ubuntu 22.04`，内核版本为 `5.10`
-- **RDK X5**:  系统为 `Ubuntu 22.04`，内核版本为 `6.1.83`
+- **RDK X5**: 系统为 `Ubuntu 22.04`，内核版本为 `6.1.83`
 
-关于主控的连接方法和相关资料，参见[Orange Pi 5 Plus Wiki](http://www.orangepi.cn/orangepiwiki/index.php/Orange_Pi_5_Plus)与[RDK X5 Doc](https://d-robotics.github.io/rdk_doc/Quick_start/hardware_introduction/rdk_x5)。
+关于主控的连接方法和相关资料，参见 [Orange Pi 5 Plus Wiki](http://www.orangepi.cn/orangepiwiki/index.php/Orange_Pi_5_Plus) 与 [RDK X5 Doc](https://d-robotics.github.io/rdk_doc/Quick_start/hardware_introduction/rdk_x5)。
 
 ## 环境配置
 
-1. 首先安装 ROS2 Humble，参考[ROS 官方](https://docs.ros.org/en/humble/Installation.html)进行安装。
+1. 首先安装 ROS2 Humble，参考 [ROS 官方](https://docs.ros.org/en/humble/Installation.html) 进行安装。
 
-2. 部署还依赖 `ccache`、`fmt`、`spdlog`、`eigen3` 等库，在主控中执行指令进行安装：
+2. 部署还依赖 `ccache`、`fmt`、`spdlog`、`eigen3`、`screen` 等库，在主控中执行指令进行安装：
 
    ```bash
-   sudo apt update && sudo apt install -y ccache libfmt-dev libspdlog-dev libeigen3-dev
+   sudo apt update && sudo apt install -y ccache libfmt-dev libspdlog-dev libeigen3-dev screen
    ```
 
-3. 接着拉取部署代码：
+3. 若需使用手柄控制，还需安装 ROS2 的 `joy` 包：
+
+   ```bash
+   sudo apt install -y ros-humble-joy
+   ```
+
+4. 若需使用仓库中的 Python 脚本（如 `scripts/set_zero.py`），还需安装对应 Python 依赖：
+
+   ```bash
+   sudo apt install -y python3-yaml python3-numpy
+   ```
+
+5. 接着拉取部署代码：
 
    ```bash
    git clone https://github.com/Roboparty/atom01_deploy.git
@@ -47,7 +61,7 @@
    git submodule update --init --recursive
    ```
 
-4. 如果使用 Orange Pi 5 Plus，执行下面的指令为其安装 **5.10 实时内核**：
+6. 如果使用 Orange Pi 5 Plus，执行下面的指令为其安装 **5.10 实时内核**：
    
    > **注意**：RDK X5 无需执行此步骤，请直接烧录我们提供的、已预装实时内核的镜像。
 
@@ -57,7 +71,7 @@
    cd ..
    ```
 
-5. 接下来为用户授予实时优先级设置权限：
+7. 接下来为用户授予实时优先级设置权限：
 
    ```bash
    sudo nano /etc/security/limits.conf
@@ -77,7 +91,7 @@
    ulimit -r
    ```
 
-    > **提示**：输出为 **98** 即代表配置成功。
+   > **提示**：输出为 **98** 即代表配置成功。
 
 ## AP配置（可选）
 
@@ -130,38 +144,38 @@
 
 ## 硬件配置
 
-在连接之前，请先完成对电机ID和IMU波特率以及频率的设置。
+在连接之前，请先完成对电机 ID 和 IMU 波特率以及频率的设置。
 
-对于**电机 ID**，请参见装配手册中对电机 ID 的定义，并使用达妙上位机工具进行设置，使用教程参见[达妙科技文档](https://gitee.com/kit-miao/damiao-document)。
+对于 **电机 ID**，请参见 [产品安装手册](https://roboparty.feishu.cn/wiki/OiO2wF4NiiE08Yk1yJjcgnumnUw) 中对电机 ID 的定义，并使用达妙上位机工具进行设置，使用教程参见 [达妙科技文档](https://gitee.com/kit-miao/damiao-document)。
 
-对于**IMU**，我们默认使用 **`921600` 波特率** 与 **`500HZ` 频率**。如何使用上位机进行修改参见[HiPNUC产品手册](https://www.hipnuc.com/resource_hi14.html)。
-> **提示**: 也可以使用其他波特率，但请**保证频率大于 200HZ**。若使用其他波特率，请同步修改 `src/inference/config/robot.yaml` 中的 IMU 配置。
+对于 **IMU**，我们默认使用 **`921600` 波特率** 与 **`500HZ` 频率**。如何使用上位机进行修改参见 [HiPNUC 产品手册](https://www.hipnuc.com/resource_hi14.html)。
+> **提示**：也可以使用其他波特率，但请 **保证频率大于 200HZ**。若使用其他波特率，请同步修改 `src/inference/config/robot.yaml` 中的 IMU 配置。
 
 ## 硬件连接
 
-电机驱动的默认 CAN 映射关系如下（按照 USB转CAN 插入主控的顺序编号，先插的为 `can0`）：
+电机驱动的默认 CAN 映射关系如下（按照 USB 转 CAN 插入主控的顺序编号，先插的为 `can0`）：
 - **`can0`** 对应 **左腿**
 - **`can1`** 对应 **右腿加腰**
 - **`can2`** 对应 **左手**
 - **`can3`** 对应 **右手**
 
-> **建议**：将 USB转CAN 插在主控的 **USB 3.0 接口**上。如果使用 USB 扩展坞，也请使用 3.0 接口的扩展坞并插在 3.0 接口上；IMU 和手柄插在 USB 2.0 接口即可。具体可参见走线说明。
+> **建议**：将 USB 转 CAN 插在主控的 **USB 3.0 接口**上。如果使用 USB 扩展坞，也请使用 3.0 接口的扩展坞并插在 3.0 接口上；IMU 和手柄插在 USB 2.0 接口即可。具体可参见 [走线说明](https://roboparty.feishu.cn/wiki/QeY2wozbiiIivlkBfdccvqVlnog)。
 
 ### 方式一：手动配置（不推荐）
-如果不配置 udev 规则，则需要严格按照上文顺序插入 USB转CAN，并插入 IMU 后手动配置 CAN 和 IMU 串口：
+如果不配置 udev 规则，则需要严格按照上文顺序插入 USB 转 CAN，并插入 IMU 后手动配置 CAN 和 IMU 串口：
 
 ```bash
 # CAN 配置
 sudo ip link set canX up type can bitrate 1000000
 sudo ip link set canX txqueuelen 1000
-# canX 为 can0 can1 can2 can3，需要为每个can都输入一遍上面两个指令
+# canX 为 can0 can1 can2 can3，需要为每个 can 都输入一遍上面两个指令
 
 # IMU 配置
 sudo chmod 666 /dev/ttyUSB0
 ```
 
 ### 方式二：使用 udev 规则自动绑定（推荐）
-编写 udev 规则将 USB 接口与对应设备物理绑定，这样就**不需要按顺序插入设备**。示例提供了 `99-auto-up-devs-orangepi.rules` 与 `99-auto-up-devs-sunrise.rules`。如果连线方式与走线说明完全一致，可直接使用。
+编写 udev 规则将 USB 接口与对应设备物理绑定，这样就**不需要按顺序插入设备**。示例提供了 `99-auto-up-devs-orangepi.rules` 与 `99-auto-up-devs-sunrise.rules`。如果连线方式与 [走线说明](https://roboparty.feishu.cn/wiki/QeY2wozbiiIivlkBfdccvqVlnog) 完全一致，可直接使用。
 
 接线不一致则需要修改文件中的 `KERNELS` 项，将其对应到实际绑定的 USB 接口。在主控输入以下指令以监视 USB 事件：
 
@@ -171,11 +185,11 @@ sudo udevadm monitor
 
 在 USB 接口插入设备时，终端就会显示该 USB 接口的 `KERNELS` 属性项，如 `/devices/pci0000:00/0000:00:14.0/usb3/3-8`，在匹配 `KERNELS` 属性项时使用 `3-8` 即可。如果绑定在该 USB 接口上的扩展坞上的 USB 口，则会有 `3-8.x` 出现，此时使用 `3-8.x` 匹配扩展坞上的 USB 口即可。
 
-编写完成后在主控中执行：
+编写完成后在项目根目录下执行：
 
 ```bash
-# RDK X5 使用 99-auto-up-devs-sunrise.rules
-sudo cp 99-auto-up-devs-orangepi.rules /etc/udev/rules.d/
+# RDK X5 使用 assets/99-auto-up-devs-sunrise.rules
+sudo cp assets/99-auto-up-devs-orangepi.rules /etc/udev/rules.d/
 sudo udevadm control --reload
 sudo udevadm trigger
 ```
@@ -186,9 +200,54 @@ sudo udevadm trigger
 
 ## 软件使用
 
+### 电机标零（首次使用/零点丢失时）
+
+> **说明**：电机标零通常只需要在首次使用时执行一次；如果电机经过检修、更换，或出现零点丢失，也需要重新执行标零。
+
+仓库内提供了两种零点标定方式，适用于不同场景：
+
+- `ros2 service call /set_zeros std_srvs/srv/Trigger`
+  用于在机器人软件已经启动、电机已经初始化且推理未运行时，将当前关节位置写入电机零点。
+- `python3 scripts/set_zero.py`
+  用于逐个电机进行人工摆位标零，更适合首次装机、检修后重标定或只想对部分电机重新标零的场景。
+
+使用 `/set_zeros` 服务时，建议按以下顺序操作：
+
+1. 在当前终端先 source ROS2 环境和工作空间环境。
+2. 运行 `./tools/start_robot.sh` 启动软件。
+3. 调用 `/init_motors` 初始化电机。
+4. 确认机器人处于目标零位，且此时没有运行推理。
+5. 调用 `/set_zeros` 写入当前零点。
+
+```bash
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+./tools/start_robot.sh
+ros2 service call /init_motors std_srvs/srv/Trigger
+ros2 service call /set_zeros std_srvs/srv/Trigger
+```
+
+使用脚本 `scripts/set_zero.py` 时：
+
+1. 先完成工作空间编译，并确保 `install/setup.bash` 已生成。
+2. 在当前终端 source ROS2 环境和工作空间环境。
+3. 确认 CAN 接口与 udev 映射已正常生效。
+4. 按需检查或修改 `scripts/config/set_zero.yaml`，确认电机 ID、CAN 接口、电机型号与实际硬件一致。
+5. 在可交互终端中运行脚本后，按提示将当前电机手动摆到零位。
+6. 按 `Enter` 写入该电机零点，按空格跳过当前电机。
+
+```bash
+colcon build --symlink-install
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+python3 scripts/set_zero.py
+```
+
+`scripts/set_zero.py` 会按 `scripts/config/set_zero.yaml` 中的顺序依次标定各电机，并在标定过程中将电机切换到阻尼模式，便于手动调整姿态。
+
 ### 启动软件
 
-> **警告**：启动机器人前，确保机器人完成零点标定，**请务必阅读安全操作指南！**
+> **警告**：启动机器人前，确保机器人完成零点标定，**请务必阅读 [安全操作指南](https://roboparty.feishu.cn/wiki/ZGtnwpHCjii2XykBYMGchoBBnSl)！**
 
 此外，请特别注意 `src/inference/config/robot.yaml` 中的零点偏移配置：
 
@@ -197,7 +256,7 @@ motor_zero_offset:
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.093,
      0.0, 0.0, 0.0, 0.0, 0.0,
-     0.0 ,0.0, 0.0, 0.0, 0.0]
+     0.0, 0.0, 0.0, 0.0, 0.0]
 ```
 
 - 如果是**将腰部 yaw 转至限位块处**进行标定：保留 `2.093`。
@@ -209,18 +268,61 @@ motor_zero_offset:
 ./tools/start_robot.sh
 ```
 
+`./tools/start_robot.sh` 会自动执行 `colcon build --symlink-install` 编译工作空间，并在后台启动以下两个 `screen` 会话：
+
+- `inference_session`：推理节点
+- `joy_session`：手柄节点
+
+可使用以下命令查看后台输出：
+
+```bash
+screen -r inference_session
+screen -r joy_session
+```
+
+可使用以下命令停止对应后台组件：
+
+```bash
+screen -S inference_session -X quit
+screen -S joy_session -X quit
+```
+
+如果需要切换不同的策略模型，可以先修改 `src/inference/launch/inference.launch.py` 中加载的配置文件：
+
+```python
+configs = [
+    os.path.join(
+        get_package_share_directory("inference"),
+        "config",
+        "inference.yaml",
+    ),
+]
+```
+
+将其中的 `inference.yaml` 替换为目标配置文件名即可，例如：
+
+- `inference_amp.yaml`
+- `inference_attn_enc.yaml`
+- `inference_beyondmimic.yaml`
+- `inference_getup.yaml`
+- `inference_interrupt.yaml`
+
+修改完成后，重新运行 `./tools/start_robot.sh`，启动时就会加载对应配置，从而使用不同策略。
+
 ### 手柄控制
 
-- **A 键**: 初始化 / 去初始化电机
-- **X 键**: 重置电机
+- **X 键**: 使能 / 失能电机
+- **A 键**: 复位电机
 - **B 键**: 开始 / 暂停推理
-- **Y 键**: 切换手柄控制 / cmd_vel指令控制
+- **Y 键**: 切换手柄控制 / cmd_vel 指令控制
 - **LB 键**: 切换策略模式（在 beyondmimic / interrupt 模式下可用）
 - **RB 键**: 切换运动序列（在 beyondmimic 模式下可用）
+- **右摇杆**: 控制前后左右移动
+- **LT/RT**: 控制转向（左 / 右旋转）
 
 ### 服务接口
 
-可以通过命令行调用ROS2服务来控制机器人：
+可以通过命令行调用 ROS2 服务来控制机器人：
 
 - **初始化电机**:
   
@@ -258,6 +360,8 @@ motor_zero_offset:
   ros2 service call /set_zeros std_srvs/srv/Trigger
   ```
 
+  该服务会将机器人当前姿态写入电机零点。调用前请确保当前终端已 source ROS2 和工作空间环境，且电机已初始化、机器人已摆到目标零位、当前没有运行推理。
+
 - **重置关节**:
 
   ```bash
@@ -276,7 +380,7 @@ motor_zero_offset:
   ros2 service call /read_joints std_srvs/srv/Trigger
   ```
 
-- **读取IMU状态**:
+- **读取 IMU 状态**:
 
   ```bash
   ros2 service call /read_imu std_srvs/srv/Trigger
@@ -284,9 +388,17 @@ motor_zero_offset:
 
 ## Python SDK
 
-本仓库提供了 Python SDK，方便用户使用 Python 脚本控制硬件。在使用前请确保已经 source 了 ROS2 环境和本工作空间的 install/setup.bash。
+本仓库提供了 Python SDK，方便用户使用 Python 脚本控制硬件。
 
-> **提示**: 详细 Python 脚本示例请参考 `scripts/` 目录。
+> **注意**：`imu_py`、`motors_py`、`robot_py` 这三个模块来自工作空间编译产物。运行任何 Python SDK 示例或脚本前，请先完成工作空间编译，并 source ROS2 环境和本工作空间的 `install/setup.bash`。
+
+```bash
+colcon build --symlink-install
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+```
+
+> **提示**：详细 Python 脚本示例请参考 `scripts/` 目录。
 
 ### 1. IMU SDK (`imu_py`)
 

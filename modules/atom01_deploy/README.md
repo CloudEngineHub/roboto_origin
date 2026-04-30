@@ -11,6 +11,8 @@
 
 This repository provides a deployment framework using ROS2 as middleware with a modular architecture for seamless customization and extension.
 
+Open-source repository: [https://github.com/Roboparty/atom01_deploy](https://github.com/Roboparty/atom01_deploy)
+
 **Maintainer**: Zhihao Liu
 **Contact**: <ZhihaoLiu_hit@163.com>
 
@@ -31,15 +33,27 @@ For controller connection methods and related resources, see [Orange Pi 5 Plus W
 
 ## Environment Setup
 
-1. First install ROS2 Humble, refer to [ROS Official](https://docs.ros.org/en/humble/Installation.html) for installation.
+1. First, install ROS2 Humble. Refer to [ROS Official](https://docs.ros.org/en/humble/Installation.html) for installation.
 
-2. The deployment also depends on libraries such as `ccache`, `fmt`, `spdlog`, `eigen3`. Execute the following instruction on the controller to install:
+2. The deployment also depends on libraries such as `ccache`, `fmt`, `spdlog`, `eigen3`, and `screen`. Execute the following instruction on the controller to install:
 
    ```bash
-   sudo apt update && sudo apt install -y ccache libfmt-dev libspdlog-dev libeigen3-dev
+   sudo apt update && sudo apt install -y ccache libfmt-dev libspdlog-dev libeigen3-dev screen
    ```
 
-3. Next, clone the deployment code:
+3. If you want to use gamepad control, also install the ROS2 `joy` package:
+
+   ```bash
+   sudo apt install -y ros-humble-joy
+   ```
+
+4. If you want to use the Python scripts in this repository (such as `scripts/set_zero.py`), also install the required Python dependencies:
+
+   ```bash
+   sudo apt install -y python3-yaml python3-numpy
+   ```
+
+5. Next, clone the deployment code:
 
    ```bash
    git clone https://github.com/Roboparty/atom01_deploy.git
@@ -47,7 +61,7 @@ For controller connection methods and related resources, see [Orange Pi 5 Plus W
    git submodule update --init --recursive
    ```
 
-4. If using Orange Pi 5 Plus, execute the following instructions to install the **5.10 real-time kernel**:
+6. If using Orange Pi 5 Plus, execute the following instructions to install the **5.10 real-time kernel**:
    
    > **Note**: For RDK X5, there is no need to perform this step. Please directly flash the image we provide that has the real-time kernel pre-installed.
 
@@ -57,7 +71,7 @@ For controller connection methods and related resources, see [Orange Pi 5 Plus W
    cd ..
    ```
 
-5. Next, grant the user permission to set real-time priorities:
+7. Next, grant the user permission to set real-time priorities:
 
    ```bash
    sudo nano /etc/security/limits.conf
@@ -130,9 +144,9 @@ To facilitate debugging without an Ethernet cable and monitor, a WiFi Access Poi
 
 ## Hardware Configuration
 
-Before connecting, please complete the settings for motor ID, and IMU baud rate and frequency.
+Before connecting, please complete the motor ID setup and configure the IMU baud rate and frequency.
 
-For the **motor ID**, please refer to the motor ID definition in the assembly manual, and use the Damiao host computer tool to set it. For tutorials, please see [Damiao Technology Docs](https://gitee.com/kit-miao/damiao-document).
+For the **motor ID**, please refer to the motor ID definition in [RoboParty Roboto Origin Product Installation Manual](https://roboparty.feishu.cn/wiki/OiO2wF4NiiE08Yk1yJjcgnumnUw), and use the Damiao host computer tool to set it. For tutorials, please see [Damiao Technology Docs](https://gitee.com/kit-miao/damiao-document).
 
 For the **IMU**, we use **`921600` baud rate** and **`500HZ` frequency** by default. How to modify it using the host computer, see the [HiPNUC Product Manual](https://www.hipnuc.com/resource_hi14.html).
 > **Tip**: Other baud rates can also be used, but please **ensure the frequency is greater than 200HZ**. If a different baud rate is used, synchronously modify the IMU configuration in `src/inference/config/robot.yaml`.
@@ -145,7 +159,7 @@ The default CAN mapping relationship for motor drivers is as follows (numbered i
 - **`can2`** corresponds to **Left hand**
 - **`can3`** corresponds to **Right hand**
 
-> **Recommendation**: Plug the USB-to-CAN into the **USB 3.0 interface** of the controller. If using a USB hub, please also use a 3.0 interface hub and plug it into a 3.0 interface; IMU and gamepad can be plugged into USB 2.0 interfaces. For specific details, refer to the wiring instructions.
+> **Recommendation**: Plug the USB-to-CAN into the **USB 3.0 interface** of the controller. If using a USB hub, please also use a 3.0 interface hub and plug it into a 3.0 interface; IMU and gamepad can be plugged into USB 2.0 interfaces. For specific details, refer to [RoboParty Roboto Origin Wiring Instructions](https://roboparty.feishu.cn/wiki/QeY2wozbiiIivlkBfdccvqVlnog).
 
 ### Method 1: Manual Configuration (Not Recommended)
 If you don't configure udev rules, you need to firmly follow the order above to insert USB-to-CAN, and after inserting the IMU, manually configure the CAN and IMU serial ports:
@@ -161,7 +175,7 @@ sudo chmod 666 /dev/ttyUSB0
 ```
 
 ### Method 2: Use udev rules for automatic binding (Recommended)
-Write udev rules to physically bind USB interfaces to corresponding devices, so **you don't need to insert devices in order**. We provide examples `99-auto-up-devs-orangepi.rules` and `99-auto-up-devs-sunrise.rules`. If your wiring is exactly the same as the wiring instructions, you can use them directly.
+Write udev rules to physically bind USB interfaces to corresponding devices, so **you don't need to insert devices in order**. We provide examples `99-auto-up-devs-orangepi.rules` and `99-auto-up-devs-sunrise.rules`. If your wiring is exactly the same as [RoboParty Roboto Origin Wiring Instructions](https://roboparty.feishu.cn/wiki/QeY2wozbiiIivlkBfdccvqVlnog), you can use them directly.
 
 If the wiring is inconsistent, you need to modify the `KERNELS` item in the file to correspond to the actually bound USB interface. Enter the following instruction on the controller to monitor USB events:
 
@@ -171,11 +185,11 @@ sudo udevadm monitor
 
 When a device is inserted into the USB port, the terminal will display the `KERNELS` attribute item of that USB interface, such as `/devices/pci0000:00/0000:00:14.0/usb3/3-8`. Use `3-8` when matching the `KERNELS` attribute. If it's bound to a USB port on a hub connected to that interface, `3-8.x` will appear. In this case, use `3-8.x` to match the USB port on the hub.
 
-After writing, execute on the controller:
+After writing, execute in the project root directory:
 
 ```bash
-# For RDK X5, use 99-auto-up-devs-sunrise.rules
-sudo cp 99-auto-up-devs-orangepi.rules /etc/udev/rules.d/
+# For RDK X5, use assets/99-auto-up-devs-sunrise.rules
+sudo cp assets/99-auto-up-devs-orangepi.rules /etc/udev/rules.d/
 sudo udevadm control --reload
 sudo udevadm trigger
 ```
@@ -186,9 +200,54 @@ The udev rules also include the IMU serial port configuration. If the rules take
 
 ## Software Usage
 
+### Motor Zeroing (Initial Setup / Zero Loss)
+
+> **Note**: Motor zeroing usually only needs to be performed once during the initial setup. Run it again only if a motor has been serviced, replaced, or has lost its zero point.
+
+The repository provides two zero-calibration methods for different situations:
+
+- `ros2 service call /set_zeros std_srvs/srv/Trigger`
+  Use this when the robot software is already running, the motors have been initialized, and inference is not running. It writes the current joint positions into the motor zero points.
+- `python3 scripts/set_zero.py`
+  Use this for manual per-motor zeroing. It is better suited for first-time setup, recalibration after maintenance, or recalibrating only part of the robot.
+
+For the `/set_zeros` service, the recommended sequence is:
+
+1. Source the ROS2 environment and the workspace environment in the current terminal.
+2. Start the software with `./tools/start_robot.sh`.
+3. Call `/init_motors` to initialize the motors.
+4. Move the robot to the target zero pose and make sure inference is not running.
+5. Call `/set_zeros` to write the current zero positions.
+
+```bash
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+./tools/start_robot.sh
+ros2 service call /init_motors std_srvs/srv/Trigger
+ros2 service call /set_zeros std_srvs/srv/Trigger
+```
+
+For the `scripts/set_zero.py` script:
+
+1. Build the workspace first and make sure `install/setup.bash` has been generated.
+2. Source the ROS2 environment and the workspace environment in the current terminal.
+3. Make sure the CAN interfaces and udev mappings are already working.
+4. Check or edit `scripts/config/set_zero.yaml` as needed so the motor IDs, CAN interfaces, and motor models match the hardware.
+5. Run the script in an interactive terminal and manually move each motor to its target zero position when prompted.
+6. Press `Enter` to write the zero for the current motor, or press Space to skip it.
+
+```bash
+colcon build --symlink-install
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+python3 scripts/set_zero.py
+```
+
+`scripts/set_zero.py` calibrates motors in the order defined in `scripts/config/set_zero.yaml` and switches each motor into damping mode during calibration so the pose can be adjusted by hand.
+
 ### Start Software
 
-> **Warning**: Before starting the robot, ensure the robot has completed zero point calibration. **Please be sure to read the safety operation guide!**
+> **Warning**: Before starting the robot, ensure the robot has completed zero point calibration. **Please be sure to read [RoboParty Roboto Origin Safety Operation Guide](https://roboparty.feishu.cn/wiki/ZGtnwpHCjii2XykBYMGchoBBnSl) first.**
 
 Additionally, pay special attention to the zero point offset configuration in `src/inference/config/robot.yaml`:
 
@@ -197,7 +256,7 @@ motor_zero_offset:
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.093,
      0.0, 0.0, 0.0, 0.0, 0.0,
-     0.0 ,0.0, 0.0, 0.0, 0.0]
+     0.0, 0.0, 0.0, 0.0, 0.0]
 ```
 
 - If you calibrate by **turning the waist yaw to the limit block**: keep `2.093`.
@@ -209,14 +268,57 @@ Once everything is ready, run the script to start the software:
 ./tools/start_robot.sh
 ```
 
+`./tools/start_robot.sh` automatically runs `colcon build --symlink-install` to build the workspace and starts the following two `screen` sessions in the background:
+
+- `inference_session`: inference node
+- `joy_session`: joystick node
+
+Use the following commands to inspect their output:
+
+```bash
+screen -r inference_session
+screen -r joy_session
+```
+
+Use the following commands to stop the corresponding background components:
+
+```bash
+screen -S inference_session -X quit
+screen -S joy_session -X quit
+```
+
+If you need to switch to a different policy model, first update the config file loaded by `src/inference/launch/inference.launch.py`:
+
+```python
+configs = [
+    os.path.join(
+        get_package_share_directory("inference"),
+        "config",
+        "inference.yaml",
+    ),
+]
+```
+
+Replace `inference.yaml` with the target config filename, for example:
+
+- `inference_amp.yaml`
+- `inference_attn_enc.yaml`
+- `inference_beyondmimic.yaml`
+- `inference_getup.yaml`
+- `inference_interrupt.yaml`
+
+After the change, run `./tools/start_robot.sh` again. The startup process will then load the selected config and use the corresponding policy.
+
 ### Gamepad Control
 
-- **A Button**: Initialize / Deinitialize motors
-- **X Button**: Reset motors
+- **X Button**: Initialize / Deinitialize motors
+- **A Button**: Reset motors
 - **B Button**: Start / Pause inference
 - **Y Button**: Switch between Gamepad Control / cmd_vel Control
 - **LB Button**: Switch policy mode (available in beyondmimic / interrupt modes)
 - **RB Button**: Switch motion sequence (available in beyondmimic mode)
+- **Right Stick**: Control forward, backward, left and right movement
+- **LT/RT**: Control turning (left / right rotation)
 
 ### Service Interface
 
@@ -258,6 +360,8 @@ You can control the robot by calling ROS2 services via command line:
   ros2 service call /set_zeros std_srvs/srv/Trigger
   ```
 
+  This service writes the robot's current pose into the motor zero points. Before calling it, make sure the current terminal has sourced ROS2 and the workspace environment, the motors are initialized, the robot is already in the target zero pose, and inference is not running.
+
 - **Reset Joints**:
 
   ```bash
@@ -284,7 +388,15 @@ You can control the robot by calling ROS2 services via command line:
 
 ## Python SDK
 
-This repository provides a Python SDK to facilitate hardware control using Python scripts. Before use, please ensure you have sourced the ROS2 environment and the workspace `install/setup.bash`.
+This repository provides a Python SDK to facilitate hardware control using Python scripts.
+
+> **Note**: The `imu_py`, `motors_py`, and `robot_py` modules are generated from the workspace build output. Before running any Python SDK example or script, first build the workspace and source both the ROS2 environment and this workspace's `install/setup.bash`.
+
+```bash
+colcon build --symlink-install
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+```
 
 > **Tip**: For detailed Python script examples, please refer to the `scripts/` directory.
 
