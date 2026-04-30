@@ -67,7 +67,7 @@ ament_target_dependencies(robot PUBLIC imu motors)
 pybind11_add_module(robot_py src/pybind_module.cpp)
 target_link_libraries(robot_py PUBLIC robot)
 
-add_executable(${PROJECT_NAME}_node src/inference_node.cpp src/ros_interface.cpp)
+add_executable(${PROJECT_NAME}_node src/inference_node.cpp src/ros_interface.cpp src/obs_manager.cpp)
 target_include_directories(${PROJECT_NAME}_node
   PUBLIC 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -78,6 +78,8 @@ target_include_directories(${PROJECT_NAME}_node
 )
 target_link_libraries(${PROJECT_NAME}_node PUBLIC ${PUBLIC_DEPENDENCIES} utils robot)
 ament_target_dependencies(${PROJECT_NAME}_node PUBLIC rclcpp sensor_msgs geometry_msgs std_srvs)
+
+set_target_properties(${PROJECT_NAME}_node PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")
 
 install(TARGETS ${PROJECT_NAME}_node
   RUNTIME DESTINATION lib/${PROJECT_NAME})
