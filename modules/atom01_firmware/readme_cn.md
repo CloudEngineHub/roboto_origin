@@ -24,6 +24,8 @@ git clone --recursive https://github.com/Roboparty/atom01_firmware.git
 git submodule update --init --recursive
 ```
 
+镜像文件都在每个子模块的 release 里面。
+
 ## 目录结构
 
 ```
