@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.12)
-project(imu)
+project(roboto_imu)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+if(NOT CMAKE_CROSSCOMPILING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -10,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_BUILD_TYPE Release)
 
-find_package(ament_cmake REQUIRED)
+find_package(ament_cmake QUIET)
 find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
@@ -35,12 +38,16 @@ target_include_directories(imu
 target_link_libraries(imu PUBLIC ${PUBLIC_DEPENDENCIES} hipnuc_imu imu_protocol)
 
 install(DIRECTORY include/ DESTINATION include)
-install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 install(TARGETS imu hipnuc_imu imu_protocol
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+# Install our custom Config for non-ROS consumers (Deb mode)
+install(FILES cmake/roboto_imuConfig.cmake
+  DESTINATION lib/cmake/roboto_imu
 )
 
 pybind11_add_module(imu_py src/pybind_module.cpp)
@@ -60,7 +67,8 @@ install(TARGETS imu_py
   RUNTIME DESTINATION ${PYTHON_INSTALL_DIR}
 )
 
-ament_export_libraries(imu hipnuc_imu imu_protocol)
-ament_export_include_directories(include)
-
-ament_package()
+if(ament_cmake_FOUND)
+  ament_export_libraries(imu hipnuc_imu imu_protocol)
+  ament_export_include_directories(include)
+  ament_package()
+endif()
