@@ -29,12 +29,9 @@ on:
 # ─────────────────────────────────────────────────────────────
 
 jobs:
-  # ───────────────────────────────────────────────────────────
-  # 主构建任务：robopi1 & robopi2，current 分支（6.1.99）
-  # ───────────────────────────────────────────────────────────
   build:
     name: ${{ matrix.board }} / current (6.1.99)
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-22.04  # 修改: 使用标准 x86_64 机器
     strategy:
       fail-fast: false
       matrix:
@@ -75,8 +72,16 @@ jobs:
             pv python3 python3-dev python3-setuptools \
             qemu-user-static rsync swig u-boot-tools unzip \
             uuid uuid-dev uuid-runtime wget whiptail xxd zip zlib1g-dev \
-            autoconf automake libtool
+            autoconf automake libtool debhelper
           sudo locale-gen en_US.UTF-8
+
+      # 修改2：增加对 toolchains 文件夹的缓存机制，极大加速构建！
+      - name: Cache toolchains
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: toolchains/
+          key: toolchain-x86-rk3588-${{ hashFiles('scripts/general.sh') }}
 
       # ── 4. 缓存内核源码 ───────────────────────────────────────
       - name: Cache kernel source
@@ -106,35 +111,59 @@ jobs:
             GITEE_SERVER=no \
             IGNORE_UPDATES=${{ steps.cache-kernel.outputs.cache-hit == 'true' && 'yes' || 'no' }}
 
-      # ── 6. 克隆 igh-deb 源码（含 ethercat submodule）────────
-      - name: Clone igh-deb
-        run: |
-          git clone --depth=1 --recurse-submodules --shallow-submodules \
-            https://github.com/wentywenty/igh-deb.git \
-            external/cache/sources/igh-deb
-
-      # ── 8. 编译 IgH EtherCAT DEB ─────────────────────────────
-      # ARM64 native runner，直接用系统 aarch64-linux-gnu- 编译器
+      # ── 6. 扩展构建包：克隆并编译 IgH EtherCAT DEB ────────
       - name: Build IgH EtherCAT DEB
         run: |
-          bash "$GITHUB_WORKSPACE/external/cache/sources/igh-deb/build.sh" \
-            "aarch64-linux-gnu-" \
-            "$GITHUB_WORKSPACE/kernel/orange-pi-6.1-rk35xx"
-          sudo cp "$GITHUB_WORKSPACE/external/cache/sources/igh-deb/output/ethercat-igh_"*.deb \
-             "$GITHUB_WORKSPACE/output/debs/"
+          # 手动拉取 igh 源码
+          git clone --depth=1 --recurse-submodules --shallow-submodules \
+            https://github.com/wentywenty/igh-deb.git \
+            igh-deb-src
+            
+          cd igh-deb-src
+          
+          # 引入被之前 build.sh 自动下载的内核交叉编译工具链
+          TOOLCHAIN_BIN="$GITHUB_WORKSPACE/toolchains/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin"
+          export PATH="$TOOLCHAIN_BIN:$PATH"
+          export CROSS_COMPILE="$TOOLCHAIN_BIN/aarch64-none-linux-gnu-"
+          
+          # 指定刚才编译完的内核源码树
+          export KERNEL_SRC="$GITHUB_WORKSPACE/kernel/orange-pi-6.1-rk35xx"
+          export ARCH="arm64"
+          
+          # 通过标准 debian 流程打包 (根据 igh-deb/debian/rules)
+          dpkg-buildpackage -d -us -uc -a arm64 -b
+          
+          # 收集生成的 deb 到 OrangePi 标准输出文件夹里
+          sudo cp ../ethercat-igh_*.deb "$GITHUB_WORKSPACE/output/debs/"
 
-      # ── 9. 收集所有产物 ───────────────────────────────────────
-      - name: Collect DEBs
+      # ── 9. 收集所有指定产物 ───────────────────────────────────
+      - name: Collect Target DEBs
         run: |
-          find output/debs -name "*.deb" | sort
-          echo "Total: $(find output/debs -name '*.deb' | wc -l) packages"
+          mkdir -p output/release-debs
+          
+          # 指定要收集的包类型关键字
+          # U-Boot 通常在 output/debs/u-boot/ 中，内核相关的在 output/debs/ 中，igh 刚刚放入 output/debs/
+          
+          find output/debs -type f -name "*.deb" | while read -r pkg; do
+            if [[ "$pkg" == *"linux-image"* ]] || \
+               [[ "$pkg" == *"linux-dtb"* ]] || \
+               [[ "$pkg" == *"linux-headers"* ]] || \
+               [[ "$pkg" == *"u-boot"* ]] || \
+               [[ "$pkg" == *"ethercat-igh"* ]]; then
+               cp "$pkg" output/release-debs/
+            fi
+          done
+          
+          echo "Selected packages for release:"
+          ls -l output/release-debs/
+          echo "Total: $(ls output/release-debs/*.deb 2>/dev/null | wc -l) packages"
 
       # ── 10. 上传 Artifacts ───────────────────────────────────
       - name: Upload DEBs
         uses: actions/upload-artifact@v4
         with:
           name: debs-${{ matrix.board }}-current
-          path: output/debs/
+          path: output/release-debs/
           if-no-files-found: error
           retention-days: 30
           
@@ -143,7 +172,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-22.04  # 修改: 换回标准 x86_64 机器
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:

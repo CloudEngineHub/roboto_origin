@@ -2061,13 +2061,13 @@ install_ros2() {
     chroot "${SDCARD}" /bin/bash -c "apt-get update"
     chroot "${SDCARD}" /bin/bash -c "apt-get install -y -qq gnupg2 lsb-release ca-certificates >/dev/null 2>&1"
 
-    local local_deb="$EXTER/cache/debs/ros2/ros2-apt-source_1.1.0.jammy_all.deb"
+    local local_deb="$EXTER/cache/debs/ros2/ros2-apt-source_1.2.0.jammy_all.deb"
     
 	if [ -f "$local_deb" ]; then
 		echo "Local ROS2 configuration package found, copying..."
 		cp "$local_deb" "${SDCARD}/tmp/ros2-apt-source.deb"
 	else
-		echo "Error: ros2-apt-source_1.1.0.jammy_all.deb not found in the $EXTER/cache/debs/ros2/ directory"
+		echo "Error: ros2-apt-source_1.2.0.jammy_all.deb not found in the $EXTER/cache/debs/ros2/ directory"
 		exit 1
 	fi
 
@@ -2103,21 +2103,17 @@ install_ros2() {
         fi
     fi
 
-    if [[ $BUILD_ROBOPARTY_PACKAGES == yes ]]; then
+}
+
+install_roboparty() {
+	if [[ $BUILD_ROBOPARTY_PACKAGES == yes ]]; then
         display_alert "Installing" "RoboParty Packages" "info"
-		# 根据板卡选择 apt 发行版名称和要安装的包
+        # 根据板卡选择 apt 发行版名称和要安装的包
         local roboparty_dist roboparty_pkgs
         case "${BOARD}" in
-            robopi1)
-                roboparty_dist="robopi1"
-                roboparty_pkgs="roboto-all"
-                ;;
-            robopi2)
-                roboparty_dist="robopi2"
-                roboparty_pkgs="roboto-all"
-                ;;
-            robopi3)
-                roboparty_dist="robopi3"
+            robopi1|robopi2|robopi3)
+                # 利用正则或者变量特性，直接截取板卡名作为源名称，代码更简洁
+                roboparty_dist="${BOARD}"
                 roboparty_pkgs="roboto-all"
                 ;;
             *)
@@ -2126,18 +2122,27 @@ install_ros2() {
                 ;;
         esac
 
-        # 1. 先从公网下载最新的 GPG 钥匙，并写入镜像
-        curl -fsSL http://apt.roboparty.com:60012/roboparty.gpg | gpg --dearmor --yes -o "${SDCARD}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+        # 1. 下载最新 GPG 钥匙：加上动态时间戳防缓存
+        display_alert "Fetching" "RoboParty GPG Key" "info"
+        curl -fsSL "http://apt.roboparty.com/roboparty.gpg?v=$(date +%s)" | gpg --dearmor --yes -o "${SDCARD}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+        
+        # 🚨 极其关键：赋予 _apt 用户读取权限，防止构建时报 NO_PUBKEY
+        chmod 644 "${SDCARD}/usr/share/keyrings/roboparty-archive-keyring.gpg"
 
         # 2. 写入 common 公共源 (覆盖写入 >)
-        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com:/ common main" \
+        display_alert "Configuring" "RoboParty APT Sources" "info"
+        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com common main" \
             > "${SDCARD}/etc/apt/sources.list.d/roboparty.list"
 
-        # 3. 写入特定板卡的源 (追加写入 >>)
-        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com/ ${roboparty_dist} main" \
+        # 3. 写入特定板卡的专属源 (追加写入 >>)
+        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com ${roboparty_dist} main" \
             >> "${SDCARD}/etc/apt/sources.list.d/roboparty.list"
 
-        chroot "${SDCARD}" /bin/bash -c "apt-get update"
-        chroot "${SDCARD}" /bin/bash -c "apt-get install -y ${roboparty_pkgs}"
+        # 4. 在 Chroot 环境中执行更新和安装
+        # 🚨 极其关键：加上 DEBIAN_FRONTEND=noninteractive 防止任何交互式弹窗卡死构建进程
+        display_alert "Installing" "Packages via APT in chroot" "info"
+        chroot "${SDCARD}" /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get update"
+        chroot "${SDCARD}" /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y ${roboparty_pkgs}"
+
     fi
 }

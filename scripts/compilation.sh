@@ -856,14 +856,19 @@ compile_ethercat_igh()
         display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH="${toolchain}:${PATH}" "${KERNEL_COMPILER}gcc" -dumpversion)" "info"
     fi
     
-    # Run build script with kernel compiler settings and proper PATH
-    env PATH="${toolchain}:${PATH}" bash "$work_dir/build.sh" "$KERNEL_COMPILER" "${LINUXSOURCEDIR}" || \
-        exit_with_error "ethercat-igh build failed"
+    # Run Debian package build using dpkg-buildpackage
+    cd "$work_dir"
+    env PATH="${toolchain}:${PATH}" \
+        CROSS_COMPILE="${toolchain}/${KERNEL_COMPILER}" \
+        KERNEL_SRC="${LINUXSOURCEDIR}" \
+        ARCH="arm64" \
+        dpkg-buildpackage -us -uc -a arm64 -b || exit_with_error "ethercat-igh build failed"
+    cd - >/dev/null
     
     # Copy generated deb to DEB storage
     display_alert "Copying" "ethercat-igh to DEB storage" "info"
     [[ -d "${DEB_STORAGE}" ]] || mkdir -p "${DEB_STORAGE}"
-    cp "$work_dir"/output/ethercat-igh_*.deb "${DEB_STORAGE}/" || true
+    cp "${EXTER}/cache/sources/"ethercat-igh_*.deb "${DEB_STORAGE}/" || true
     
     display_alert "ethercat-igh package built successfully" "" "info"
 }
