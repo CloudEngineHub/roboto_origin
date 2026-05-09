@@ -1,4 +1,4 @@
-#include "bms_protocol.hpp"
+#include "bms_driver.hpp"
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -66,16 +66,30 @@ bool BmsProtocol::open() {
     serial_fd_ = ::open(port_name_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
     if (serial_fd_ < 0) return false;
     struct termios options;
-    tcgetattr(serial_fd_, &options);
+    if (tcgetattr(serial_fd_, &options) != 0) {
+        close_port();
+        return false;
+    }
     speed_t baud = (baud_rate_ == 9600) ? B9600 : B115200;
     cfsetispeed(&options, baud);
     cfsetospeed(&options, baud);
-    options.c_cflag |= (CLOCAL | CREAD | CS8);
-    options.c_cflag &= ~(PARENB | CSTOPB | CSIZE);
+
+    // Modbus RTU standard serial mode: 8N1
+    options.c_cflag |= (CLOCAL | CREAD);
+    options.c_cflag &= ~(PARENB | CSTOPB | CSIZE | CRTSCTS);
+    options.c_cflag |= CS8;
+
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
     options.c_iflag &= ~(IXON | IXOFF | IXANY); // Disable flow control
     options.c_oflag &= ~OPOST;
-    tcsetattr(serial_fd_, TCSANOW, &options);
+
+    options.c_cc[VMIN] = 0;
+    options.c_cc[VTIME] = 0;
+
+    if (tcsetattr(serial_fd_, TCSANOW, &options) != 0) {
+        close_port();
+        return false;
+    }
     fcntl(serial_fd_, F_SETFL, FNDELAY);
     return true;
 }
@@ -98,7 +112,8 @@ void BmsProtocol::send_read_request(uint16_t start_addr, uint16_t num_regs) {
     uint8_t frame[8] = {BMS_ADDR, FUNC_READ, (uint8_t)(start_addr >> 8), (uint8_t)start_addr, (uint8_t)(num_regs >> 8), (uint8_t)num_regs};
     uint16_t crc = calculate_crc(frame, 6);
     frame[6] = crc & 0xFF; frame[7] = crc >> 8;
-    write(serial_fd_, frame, 8);
+    ssize_t _ = write(serial_fd_, frame, 8);
+    (void)_;
 }
 
 bool BmsProtocol::read_response(std::vector<uint8_t>& buffer, int expected_bytes) {
@@ -136,7 +151,7 @@ bool BmsProtocol::read_response(std::vector<uint8_t>& buffer, int expected_bytes
     return (total_read == expected_bytes);
 }
 
-bool BmsProtocol::read_basic_info(BatteryStatus& status) {
+bool BmsProtocol::read_basic_info(bms::BatteryStatus& status) {
     tcflush(serial_fd_, TCIOFLUSH);
     send_read_request(0x9000, 15);
     std::vector<uint8_t> buf;
@@ -153,7 +168,7 @@ bool BmsProtocol::read_basic_info(BatteryStatus& status) {
     return false;
 }
 
-bool BmsProtocol::read_version_info(BatteryStatus& status) {
+bool BmsProtocol::read_version_info(bms::BatteryStatus& status) {
     tcflush(serial_fd_, TCIOFLUSH);
     send_read_request(REG_VERSION_SW, 2);
     std::vector<uint8_t> resp;
@@ -174,7 +189,7 @@ bool BmsProtocol::read_version_info(BatteryStatus& status) {
     return false;
 }
 
-bool BmsProtocol::read_capacity_info(BatteryStatus& status) {
+bool BmsProtocol::read_capacity_info(bms::BatteryStatus& status) {
     tcflush(serial_fd_, TCIOFLUSH);
     send_read_request(0x9028, 4); 
     std::vector<uint8_t> buf;
@@ -204,13 +219,15 @@ bool BmsProtocol::set_discharge_output(bool enable) {
     tcflush(serial_fd_, TCIOFLUSH);
     uint8_t f6[8] = {BMS_ADDR, FUNC_WRITE_SINGLE, (uint8_t)(REG_IO_CONTROL >> 8), (uint8_t)REG_IO_CONTROL, (uint8_t)(val >> 8), (uint8_t)val};
     uint16_t crc = calculate_crc(f6, 6); f6[6] = crc & 0xFF; f6[7] = crc >> 8;
-    write(serial_fd_, f6, 8);
+    ssize_t _ = write(serial_fd_, f6, 8);
+    (void)_;
     std::vector<uint8_t> resp;
     if (read_response(resp, 8)) return true;
     usleep(50000); tcflush(serial_fd_, TCIOFLUSH);
     uint8_t f10[13] = {BMS_ADDR, FUNC_WRITE_MULTI, (uint8_t)(REG_IO_CONTROL >> 8), (uint8_t)REG_IO_CONTROL, 0x00, 0x01, 0x02, (uint8_t)(val >> 8), (uint8_t)val};
     crc = calculate_crc(f10, 9); f10[9] = crc & 0xFF; f10[10] = crc >> 8;
-    write(serial_fd_, f10, 11);
+    ssize_t _2 = write(serial_fd_, f10, 11);
+    (void)_2;
     return read_response(resp, 8);
 }
 
