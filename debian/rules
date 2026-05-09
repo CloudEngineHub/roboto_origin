@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+export DH_VERBOSE = 1
+
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCMAKE_INSTALL_PREFIX=/opt/roboparty \
+		-DCMAKE_PREFIX_PATH=/opt/roboparty \
+		-DCMAKE_BUILD_TYPE=Release
+
+override_dh_install:
+	dh_install
+	
+	install -d debian/roboto-bms/etc/default
+	install -m 644 etc/default/bms_daemon.default debian/roboto-bms/etc/default/bms_daemon
+
+	install -d debian/roboto-bms/etc/systemd/system
+	install -m 644 etc/systemd/system/*.service debian/roboto-bms/etc/systemd/system/
