@@ -26,7 +26,8 @@ userpatches
 
 mkimage.sh
 
-!external/patch/u-boot
+!external/patch/u-boot/
+!external/patch/u-boot/*/*
 !external/patch/kernel
 !external/patch/kernel/*/*
 !external/config/kernel

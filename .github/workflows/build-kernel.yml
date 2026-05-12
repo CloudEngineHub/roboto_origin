@@ -24,41 +24,46 @@ on:
       - 'userpatches/kernel/**'
   workflow_dispatch:
 
-# ─────────────────────────────────────────────────────────────
-# 环境变量
-# ─────────────────────────────────────────────────────────────
-
 jobs:
   build:
     name: ${{ matrix.board }} / current (6.1.99)
-    runs-on: ubuntu-22.04  # 修改: 使用标准 x86_64 机器
+    # 使用你的 EPYC 自建 Runner
+    runs-on: [self-hosted, linux, x64] 
     strategy:
       fail-fast: false
       matrix:
         board: [robopi1, robopi2]
 
     steps:
-      # ── 1. 释放磁盘空间（必须在 checkout 之前，否则会覆盖工作区）──
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@v10
-        with:
-          root-reserve-mb: 1024
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
 
-      # ── 2. 拉取代码 ──────────────────────────────────────────
+      # ── 0. 强行夺回工作区权限（给上一轮的 sudo 擦屁股） ──
+      - name: Fix Workspace Permissions
+        run: |
+          if [ -d "$GITHUB_WORKSPACE" ]; then
+            sudo chown -R $(whoami):$(whoami) "$GITHUB_WORKSPACE"
+          fi
+          
+      # ── 1. 拉取代码 ──────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          clean: true
 
-      # ── 3. 安装构建依赖 ──────────────────────────────────────
+      # ── 2. 安装构建依赖 (加入多并发防冲突机制) ─────────────────────────
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          echo "==== 检查 apt 锁状态，防止多个 Runner 冲突 ===="
+          
+          # 第一重保险：如果发现别人在用，就每隔 10 秒看一眼，直到别人用完
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+            echo "发现其他 Runner 正在安装依赖，排队等待 10 秒..."
+            sleep 10
+          done
+          
+          # 第二重保险：利用 apt 内置的超时参数 (最多等 600 秒)
+          sudo apt-get update -o DPkg::Lock::Timeout=600
+          
+          sudo apt-get install -o DPkg::Lock::Timeout=600 -y --no-install-recommends \
             acl aria2 bc binfmt-support binutils bison btrfs-progs \
             build-essential ca-certificates ccache cpio cryptsetup-bin \
             debian-archive-keyring debootstrap device-tree-compiler \
@@ -72,112 +77,119 @@ jobs:
             pv python3 python3-dev python3-setuptools \
             qemu-user-static rsync swig u-boot-tools unzip \
             uuid uuid-dev uuid-runtime wget whiptail xxd zip zlib1g-dev \
-            autoconf automake libtool debhelper
+            autoconf automake libtool debhelper zstd
+            
           sudo locale-gen en_US.UTF-8
 
-      # 修改2：增加对 toolchains 文件夹的缓存机制，极大加速构建！
-      - name: Cache toolchains
-        id: cache-toolchain
-        uses: actions/cache@v4
-        with:
-          path: toolchains/
-          key: toolchain-x86-rk3588-${{ hashFiles('scripts/general.sh') }}
+      # ── 3. EPYC 本地工具链缓存 (秒级解压) ─────────────────────
+      - name: Local Toolchain Cache (EPYC Disk)
+        id: local-cache
+        run: |
+          CACHE_PATH="/home/robo/runner-cache"
+          CACHE_FILE="$CACHE_PATH/toolchain-x86-rk3588.tar.zst"
+          mkdir -p $CACHE_PATH
+          
+          if [ -f "$CACHE_FILE" ]; then
+            echo "==== 发现本地缓存，正在极速恢复工具链 ===="
+            tar -I zstd -xf "$CACHE_FILE" -C $GITHUB_WORKSPACE
+            echo "hit=true" >> $GITHUB_OUTPUT
+          else
+            echo "==== 本地无缓存，本次将执行下载并保存 ===="
+            echo "hit=false" >> $GITHUB_OUTPUT
+          fi
 
-      # ── 4. 缓存内核源码 ───────────────────────────────────────
-      - name: Cache kernel source
-        id: cache-kernel
-
-        uses: actions/cache@v4
-        with:
-          path: kernel/
-          key: kernel-current-${{ hashFiles('external/config/sources/families/rockchip-rk3588.conf') }}
-          restore-keys: |
-            kernel-current-
-
-      # ── 5. 编译内核、头文件、设备树 DEB ─────────────────────
+      # ── 4. 编译内核、头文件、设备树 DEB ─────────────────────
       - name: Build kernel DEBs
         run: |
+          # 执行核心构建脚本
           sudo bash "$GITHUB_WORKSPACE/build.sh" \
             BOARD=${{ matrix.board }} \
             BRANCH=current \
             BUILD_OPT=kernel \
-            KERNEL_CONFIGURE=no \
-            INSTALL_HEADERS=yes \
-            CLEAN_LEVEL="debs" \
-            USE_TORRENT=no \
-            DOWNLOAD_MIRROR="" \
-            build_rt_image=no \
-            NO_APT_CACHER=yes \
-            GITEE_SERVER=no \
-            IGNORE_UPDATES=${{ steps.cache-kernel.outputs.cache-hit == 'true' && 'yes' || 'no' }}
+            KERNEL_CONFIGURE=no
+            
+      - name: Collect Kernel DEBs
+        run: |
+          sudo mkdir -p output/release-debs
+          find output/debs -type f -name "*.deb" | while read -r pkg; do
+            if [[ "$pkg" == *"linux-image"* ]] || \
+               [[ "$pkg" == *"linux-dtb"* ]] || \
+               [[ "$pkg" == *"linux-headers"* ]]; then
+               sudo cp "$pkg" output/release-debs/
+            fi
+          done
 
-      # ── 6. 扩展构建包：克隆并编译 IgH EtherCAT DEB ────────
+      # ── 4.5 编译 U-Boot DEB ─────────────────────────────────
+      - name: Build U-Boot DEBs
+        run: |
+          echo "==== 开始编译 U-Boot ===="
+          sudo bash "$GITHUB_WORKSPACE/build.sh" \
+            BOARD=${{ matrix.board }} \
+            BRANCH=current \
+            BUILD_OPT=u-boot
+            
+      # ── 5. 保存工具链到服务器本地硬盘 ────────────────────────
+      - name: Save Toolchain to Local Disk
+        if: steps.local-cache.outputs.hit == 'false'
+        run: |
+          CACHE_PATH="/home/robo/runner-cache"
+          CACHE_FILE="$CACHE_PATH/toolchain-x86-rk3588.tar.zst"
+          if [ -d "toolchains" ]; then
+            echo "==== 正在压缩并保存工具链到 EPYC 本地硬盘 ===="
+            tar -I 'zstd -3' -cf "$CACHE_FILE" toolchains/
+          fi
+
+      # ── 6. 扩展构建：IgH EtherCAT DEB ────────────────────────
       - name: Build IgH EtherCAT DEB
         run: |
-          # 手动拉取 igh 源码
           git clone --depth=1 --recurse-submodules --shallow-submodules \
             https://github.com/wentywenty/igh-deb.git \
             igh-deb-src
-            
+          
           cd igh-deb-src
           
-          # 引入被之前 build.sh 自动下载的内核交叉编译工具链
+          # 修复 debhelper 兼容性
+          sed -i "s/debhelper-compat (= 12)/debhelper/g" debian/control || true
+          
+          # 指定交叉编译工具链路径
           TOOLCHAIN_BIN="$GITHUB_WORKSPACE/toolchains/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin"
           export PATH="$TOOLCHAIN_BIN:$PATH"
           export CROSS_COMPILE="$TOOLCHAIN_BIN/aarch64-none-linux-gnu-"
           
-          # 指定刚才编译完的内核源码树
+          # 指定刚才编译出的内核源码路径 (不缓存，现场引用)
           export KERNEL_SRC="$GITHUB_WORKSPACE/kernel/orange-pi-6.1-rk35xx"
           export ARCH="arm64"
           
-          # 通过标准 debian 流程打包 (根据 igh-deb/debian/rules)
+          # 执行 ARM64 交叉打包
           dpkg-buildpackage -d -us -uc -a arm64 -b
           
-          # 收集生成的 deb 到 OrangePi 标准输出文件夹里
           sudo cp ../ethercat-igh_*.deb "$GITHUB_WORKSPACE/output/debs/"
 
-      # ── 9. 收集所有指定产物 ───────────────────────────────────
-      - name: Collect Target DEBs
+      # ── 7. 收集并上传产物 ────────────────────────────────────
+      - name: Collect U-Boot & EtherCAT DEBs
         run: |
-          mkdir -p output/release-debs
-          
-          # 指定要收集的包类型关键字
-          # U-Boot 通常在 output/debs/u-boot/ 中，内核相关的在 output/debs/ 中，igh 刚刚放入 output/debs/
-          
+          sudo mkdir -p output/release-debs
           find output/debs -type f -name "*.deb" | while read -r pkg; do
-            if [[ "$pkg" == *"linux-image"* ]] || \
-               [[ "$pkg" == *"linux-dtb"* ]] || \
-               [[ "$pkg" == *"linux-headers"* ]] || \
-               [[ "$pkg" == *"u-boot"* ]] || \
+            if [[ "$pkg" == *"u-boot"* ]] || \
                [[ "$pkg" == *"ethercat-igh"* ]]; then
-               cp "$pkg" output/release-debs/
+               sudo cp "$pkg" output/release-debs/
             fi
           done
-          
-          echo "Selected packages for release:"
-          ls -l output/release-debs/
-          echo "Total: $(ls output/release-debs/*.deb 2>/dev/null | wc -l) packages"
 
-      # ── 10. 上传 Artifacts ───────────────────────────────────
-      - name: Upload DEBs
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: debs-${{ matrix.board }}-current
           path: output/release-debs/
-          if-no-files-found: error
-          retention-days: 30
-          
-      - name: Ensure zstd installed
-        run: sudo apt-get update && sudo apt-get install -y zstd
+          retention-days: 7
 
   release:
     name: Create GitHub Release
-    runs-on: ubuntu-22.04  # 修改: 换回标准 x86_64 机器
+    runs-on: ubuntu-latest # 发布任务在官方服务器跑即可
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
-
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -186,12 +198,8 @@ jobs:
           pattern: debs-*
           merge-multiple: false
 
-      - name: List release files
-        run: find release-debs/ -name "*.deb" | sort
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: release-debs/**/*.deb
           generate_release_notes: true
-          fail_on_unmatched_files: true
