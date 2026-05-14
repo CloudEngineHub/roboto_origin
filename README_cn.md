@@ -56,6 +56,7 @@
 | **[atom01_train](https://github.com/Roboparty/atom01_train)**             | 强化学习算法、训练环境、仿真配置、Sim2Sim迁移      |
 | **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF运动学/动力学描述、视觉/碰撞网格、关节参数优化 |
 | **[atom01_firmware](https://github.com/Roboparty/atom01_firmware)**       | 固件开发、嵌入式软件、USB2CAN、OrangePi构建系统、系统守护进程管理 |
+| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | 外观件设计、外壳结构、视觉参考、表面处理与装配说明 |
 
 **详细贡献指南请点击这里：** [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)
 
@@ -85,6 +86,7 @@
 | **atom01_train**       | 基于IsaacLab的直接训练工作流，提供高透明度和低重构难度的强化学习训练环境，支持Sim2Sim迁移到MuJoCo | https://github.com/Roboparty/atom01_train       |
 | **atom01_description** | Atom01机器人的URDF模型文件，包含机器人运动学和动力学描述，用于仿真和可视化                        | https://github.com/Roboparty/atom01_description |
 | **atom01_firmware**    | Atom01机器人的固件模块，提供嵌入式软件支持，包括USB2CAN、OrangePi构建系统和系统守护进程管理         | https://github.com/Roboparty/atom01_firmware    |
+| **atom01_appearance**  | Atom01机器人的外观设计文件，包含外观件、外壳设计资料和原型机外观说明                              | https://github.com/Roboparty/atom01_appearance  |
 
 ---
 

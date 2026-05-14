@@ -37,6 +37,7 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 | **[atom01_train](https://github.com/Roboparty/atom01_train)**             | RL algorithms, training environments, simulation configs, Sim2Sim transfer                 |
 | **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF kinematic/dynamic descriptions, visual/collision meshes, joint parameter optimization |
 | **[atom01_firmware](https://github.com/Roboparty/atom01_firmware)**       | Firmware development, embedded software, USB2CAN, OrangePi build system, system daemon management |
+| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | Exterior shell design, appearance structure, visual references, surface and assembly notes |
 
 **For detailed contribution guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
@@ -64,6 +65,7 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 | **atom01_train**       | Direct IsaacLab training workflow providing high transparency and low refactoring difficulty RL training environment, supports Sim2Sim transfer to MuJoCo | https://github.com/Roboparty/atom01_train       |
 | **atom01_description** | URDF model files for Atom01 robot, containing kinematic and dynamic descriptions for simulation and visualization                                         | https://github.com/Roboparty/atom01_description |
 | **atom01_firmware**    | Firmware module for Atom01 robot, providing embedded software support including USB2CAN, OrangePi build system, and system daemon management              | https://github.com/Roboparty/atom01_firmware    |
+| **atom01_appearance**  | Appearance design files for Atom01 robot, including exterior shell design assets and prototype enclosure documentation                                   | https://github.com/Roboparty/atom01_appearance  |
 
 ---
 
