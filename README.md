@@ -37,7 +37,7 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 | **[atom01_train](https://github.com/Roboparty/atom01_train)**             | RL algorithms, training environments, simulation configs, Sim2Sim transfer                 |
 | **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF kinematic/dynamic descriptions, visual/collision meshes, joint parameter optimization |
 | **[atom01_firmware](https://github.com/Roboparty/atom01_firmware)**       | Firmware development, embedded software, USB2CAN, OrangePi build system, system daemon management |
-| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | Exterior shell design, appearance structure, visual references, surface and assembly notes |
+| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | Exterior shell design, appearance structure, visual references, surface and assembly notes. Static Display Only; Printing Not Recommended |
 
 **For detailed contribution guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
