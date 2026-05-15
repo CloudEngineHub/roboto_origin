@@ -86,7 +86,7 @@
 | **atom01_train**       | 基于IsaacLab的直接训练工作流，提供高透明度和低重构难度的强化学习训练环境，支持Sim2Sim迁移到MuJoCo | https://github.com/Roboparty/atom01_train       |
 | **atom01_description** | Atom01机器人的URDF模型文件，包含机器人运动学和动力学描述，用于仿真和可视化                        | https://github.com/Roboparty/atom01_description |
 | **atom01_firmware**    | Atom01机器人的固件模块，提供嵌入式软件支持，包括USB2CAN、OrangePi构建系统和系统守护进程管理         | https://github.com/Roboparty/atom01_firmware    |
-| **atom01_appearance**  | Atom01机器人的外观设计文件，包含外观件、外壳设计资料和原型机外观说明                              | https://github.com/Roboparty/atom01_appearance  |
+| **atom01_appearance**  | Atom01机器人的外观设计文件，包含外观件、外壳设计资料和原型机外观说明，仅供静态展示，不建议打印                              | https://github.com/Roboparty/atom01_appearance  |
 
 ---
 
