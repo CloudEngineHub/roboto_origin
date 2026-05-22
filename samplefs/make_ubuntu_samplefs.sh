@@ -1,4 +1,11 @@
 #!/bin/bash
+###
+ # COPYRIGHT NOTICE
+ # Copyright 2024 D-Robotics, Inc.
+ # All rights reserved.
+###
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 wentywenty
 
 set -eu
 
@@ -25,7 +32,7 @@ apt_mirror="http://localhost:3142/${UBUNTU_MIRROR}"
 apt_extra="-o Acquire::http::Proxy=\"http://localhost:3142\""
 
 PYTHON_PACKAGE_LIST="numpy==1.26.4 opencv-python pySerial i2cdev spidev matplotlib pillow \
-websockets lark-parser netifaces google protobuf==3.20.1 "
+websockets lark-parser netifaces google protobuf==3.20.1 gevent==25.5.1"
 
 DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq linuxptp libpcap-dev"
 
@@ -373,6 +380,7 @@ make_base_root() {
 	if [ "${RELEASE}" == "jammy" ]; then
 		# Install ROS2 Humble
 		install_ros2 "${dst_dir}"
+		install_roboparty "${dst_dir}"
 		chroot "${dst_dir}" /bin/bash -c "apt install libpcl-dev libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
 	fi
 	
@@ -459,6 +467,52 @@ install_ros2()
 	local setup_line="source /opt/ros/humble/setup.bash"
 	if ! grep -q "${setup_line}" "${dst_dir}/root/.bashrc"; then
 		echo "${setup_line}" >> "${dst_dir}/root/.bashrc"
+	fi
+}
+
+install_roboparty()
+{
+	local dst_dir=$1
+	# 使用 :- 语法防止 set -u 引起的未定义变量报错
+	if [[ "${BUILD_ROBOPARTY_PACKAGES:-}" == "yes" ]]; then
+		log_out "Installing" "RoboParty Packages" "info"
+		# 根据板卡选择 apt 发行版名称和要安装的包
+		local roboparty_dist roboparty_pkgs
+		case "${BOARD:-}" in
+			robopi0|robopi1|robopi2|robopi3)
+				# 咱们是robopi0的板子，利用正则或者变量特性，直接截取板卡名作为源名称，代码更简洁
+				# roboparty_dist="robopi0"
+				roboparty_dist="${BOARD}"
+				roboparty_pkgs="roboto-all"
+				;;
+			*)
+				log_out "BUILD_ROBOPARTY_PACKAGES=yes but board '${BOARD:-}' has no RoboParty source defined, skipping" "" "wrn"
+				return 0
+				;;
+		esac
+
+		# 1. 下载最新 GPG 钥匙：加上动态时间戳防缓存
+		log_out "Fetching" "RoboParty GPG Key" "info"
+		curl -fsSL "http://apt.roboparty.com/roboparty.gpg?v=$(date +%s)" | gpg --dearmor --yes -o "${dst_dir}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+		
+		# 🚨 极其关键：赋予 _apt 用户读取权限，防止构建时报 NO_PUBKEY
+		chmod 644 "${dst_dir}/usr/share/keyrings/roboparty-archive-keyring.gpg"
+
+		# 2. 写入 common 公共源 (覆盖写入 >)
+		log_out "Configuring" "RoboParty APT Sources" "info"
+		echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com common main" \
+			> "${dst_dir}/etc/apt/sources.list.d/roboparty.list"
+
+		# 3. 写入特定板卡的专属源 (追加写入 >>)
+		echo "deb [arch=arm64 signed-by=/usr/share/keyrings/roboparty-archive-keyring.gpg] http://apt.roboparty.com ${roboparty_dist} main" \
+			>> "${dst_dir}/etc/apt/sources.list.d/roboparty.list"
+
+		# 4. 在 Chroot 环境中执行更新和安装
+		# 🚨 极其关键：加上 DEBIAN_FRONTEND=noninteractive 防止任何交互式弹窗卡死构建进程
+		log_out "Installing" "Packages via APT in chroot" "info"
+		chroot "${dst_dir}" /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get update"
+		chroot "${dst_dir}" /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y ${roboparty_pkgs}"
+
 	fi
 }
 
