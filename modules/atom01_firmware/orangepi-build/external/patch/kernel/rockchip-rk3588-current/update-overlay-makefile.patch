@@ -1,0 +1,18 @@
+diff --git a/arch/arm64/boot/dts/rockchip/overlay/Makefile b/arch/arm64/boot/dts/rockchip/overlay/Makefile
+index 90dddfdf35ee..58d3385e1ff6 100644
+--- a/arch/arm64/boot/dts/rockchip/overlay/Makefile
++++ b/arch/arm64/boot/dts/rockchip/overlay/Makefile
+@@ -46,8 +46,13 @@ dtbo-$(CONFIG_ARCH_ROCKCHIP) += \
+ 	rk3588-uart7-m2.dtbo \
+ 	rk3588-uart8-m1.dtbo \
+ 	rk3588-can0-m0.dtbo \
++	rk3588-can0-m1-update-sdmmc.dtbo \
++	rk3588-can0-canfd.dtbo \
++	rk3588-gpio4-pa4-to-pa6.dtbo \
+ 	rk3588-can1-m0.dtbo \
++	rk3588-can1-canfd.dtbo \
+ 	rk3588-can1-m1.dtbo \
++	rk3588-can2-can20.dtbo \
+ 	rk3588-can2-m1.dtbo \
+ 	rk3588-lcd1.dtbo \
+ 	rk3588-lcd2.dtbo \

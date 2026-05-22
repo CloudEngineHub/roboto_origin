@@ -455,18 +455,22 @@
 	status = "okay";
 };
 
+// &sdmmc {
+// 	max-frequency = <150000000>;
+// 	no-sdio;
+// 	no-mmc;
+// 	bus-width = <4>;
+// 	cap-mmc-highspeed;
+// 	cap-sd-highspeed;
+// 	disable-wp;
+// 	sd-uhs-sdr104;
+// 	vmmc-supply = <&vcc_3v3_s3>;
+// 	vqmmc-supply = <&vccio_sd_s0>;
+// 	status = "okay";
+// };
+
 &sdmmc {
-	max-frequency = <150000000>;
-	no-sdio;
-	no-mmc;
-	bus-width = <4>;
-	cap-mmc-highspeed;
-	cap-sd-highspeed;
-	disable-wp;
-	sd-uhs-sdr104;
-	vmmc-supply = <&vcc_3v3_s3>;
-	vqmmc-supply = <&vccio_sd_s0>;
-	status = "okay";
+	status = "disabled";
 };
 
 &tsadc {
@@ -926,6 +930,14 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart9m2_xfer &uart9m2_ctsn>;
+};
+
+&can0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&can0m1_pins>;
+	assigned-clocks = <&cru CLK_CAN0>;
+	assigned-clock-rates = <200000000>;
 };
 
 &can1 {

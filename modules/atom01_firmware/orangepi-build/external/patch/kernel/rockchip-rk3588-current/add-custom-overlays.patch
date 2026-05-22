@@ -1,0 +1,72 @@
+diff --git a/arch/arm64/boot/dts/rockchip/overlay/rk3588-can0-m1-update-sdmmc.dts b/arch/arm64/boot/dts/rockchip/overlay/rk3588-can0-m1-update-sdmmc.dts
+new file mode 100644
+index 000000000000..532c0cba72bf
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/overlay/rk3588-can0-m1-update-sdmmc.dts
+@@ -0,0 +1,30 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++    compatible = "rockchip,rk3588";
++
++    fragment@0 {
++        target = <&can0>;
++        __overlay__ {
++            status = "disabled";
++        };
++    };
++
++    fragment@1 {
++        target = <&sdmmc>;
++        __overlay__ {
++            max-frequency = <150000000>;
++            no-sdio;
++            no-mmc;
++            bus-width = <4>;
++            cap-mmc-highspeed;
++            cap-sd-highspeed;
++            disable-wp;
++            sd-uhs-sdr104;
++            vmmc-supply = <&vcc_3v3_s3>;
++            vqmmc-supply = <&vccio_sd_s0>;
++            status = "okay";
++        };
++    };
++};
+diff --git a/arch/arm64/boot/dts/rockchip/overlay/rk3588-gpio4-pa4-to-pa6.dts b/arch/arm64/boot/dts/rockchip/overlay/rk3588-gpio4-pa4-to-pa6.dts
+new file mode 100644
+index 000000000000..3633a3a11e77
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/overlay/rk3588-gpio4-pa4-to-pa6.dts
+@@ -0,0 +1,30 @@
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/pinctrl/rockchip.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++    compatible = "rockchip,rk3588";
++
++    fragment@0 {
++        target = <&vcc5v0_host>;
++        __overlay__ {
++            gpio = <&gpio4 RK_PA6 GPIO_ACTIVE_HIGH>;
++        };
++    };
++
++    fragment@1 {
++        target = <&vcc5v0_host_en>;
++        __overlay__ {
++            rockchip,pins = <4 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
++        };
++    };
++
++    fragment@2 {
++        target = <&typec5v_pwren>;
++        __overlay__ {
++            rockchip,pins = <4 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
++        };
++    };
++};
