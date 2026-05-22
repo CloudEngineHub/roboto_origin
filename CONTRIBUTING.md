@@ -26,6 +26,7 @@ Review the module descriptions below to determine which sub-repository your cont
 | **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)**           | ROS2 deployment framework  | Driver development, middleware modules, deployment configurations, IMU/motor integration |
 | **[atom01_train](https://github.com/Roboparty/atom01_train)**             | IsaacLab training workflow | RL algorithms, training environments, simulation configs, Sim2Sim transfer               |
 | **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF robot models          | Kinematic/dynamic descriptions, visual/collision meshes, joint parameters                |
+| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | Appearance design files    | Exterior shell design, appearance structure, visual references, surface and assembly notes |
 
 ### 2. Fork and Clone the Target Sub-Repository
 
