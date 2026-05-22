@@ -1,4 +1,11 @@
 #!/bin/bash
+###
+ # COPYRIGHT NOTICE
+ # Copyright 2024 D-Robotics, Inc.
+ # All rights reserved.
+###
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 wentywenty
 
 set -e
 
@@ -103,4 +110,11 @@ EOF
 
   chroot "${DST_ROOTFS_DIR}" /bin/bash -c "cp -aRf /etc/skel/. /root/"
   chroot "${DST_ROOTFS_DIR}" /bin/bash -c "cp -aRf /etc/skel/. /home/${SUN_USERNAME}"
+
+  cat <<-EOF >> "${DST_ROOTFS_DIR}/etc/security/limits.conf"
+
+# Allow user '${SUN_USERNAME}' to set real-time priorities
+${SUN_USERNAME}   -   rtprio   98
+${SUN_USERNAME}   -   memlock  unlimited
+EOF
 }

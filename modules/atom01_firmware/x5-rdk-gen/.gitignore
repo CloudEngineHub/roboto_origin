@@ -5,4 +5,5 @@ rootfs_server
 deb_packages/
 third_packages
 .repo/
-
+.deb_build_logs/
+.cache/
