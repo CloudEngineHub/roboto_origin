@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3588s-orangepi-cm5-robopi2.dts
-@@ -0,0 +1,1037 @@
+@@ -0,0 +1,1049 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
@@ -458,18 +458,22 @@
 +	status = "okay";
 +};
 +
++// &sdmmc {
++// 	max-frequency = <150000000>;
++// 	no-sdio;
++// 	no-mmc;
++// 	bus-width = <4>;
++// 	cap-mmc-highspeed;
++// 	cap-sd-highspeed;
++// 	disable-wp;
++// 	sd-uhs-sdr104;
++// 	vmmc-supply = <&vcc_3v3_s3>;
++// 	vqmmc-supply = <&vccio_sd_s0>;
++// 	status = "okay";
++// };
++
 +&sdmmc {
-+	max-frequency = <150000000>;
-+	no-sdio;
-+	no-mmc;
-+	bus-width = <4>;
-+	cap-mmc-highspeed;
-+	cap-sd-highspeed;
-+	disable-wp;
-+	sd-uhs-sdr104;
-+	vmmc-supply = <&vcc_3v3_s3>;
-+	vqmmc-supply = <&vccio_sd_s0>;
-+	status = "okay";
++	status = "disabled";
 +};
 +
 +&tsadc {
@@ -929,6 +933,14 @@
 +	status = "okay";
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&uart9m2_xfer &uart9m2_ctsn>;
++};
++
++&can0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&can0m1_pins>;
++	assigned-clocks = <&cru CLK_CAN0>;
++	assigned-clock-rates = <200000000>;
 +};
 +
 +&can1 {

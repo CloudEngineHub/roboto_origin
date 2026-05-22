@@ -56,6 +56,8 @@ cd orangepi-build
 
 **推荐内核版本**：`current`
 
+编译rp0 5plus主控镜像，直接sudo ./uild.sh robopi1 即可
+
 ## 目录结构
 
 ```

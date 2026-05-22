@@ -147,7 +147,6 @@ create_rootfs_cache()
 	[[ ${BUILD_DESKTOP} == yes ]] && local cache_type="xfce-desktop"
 	[[ -n ${DESKTOP_ENVIRONMENT} ]] && local cache_type="${DESKTOP_ENVIRONMENT}"
 	[[ ${BUILD_MINIMAL} == yes ]] && local cache_type="minimal"
-	[[ ${BUILD_ROBOPARTY_PACKAGES} == yes ]] && local cache_type="${cache_type}-ros"
 	local cache_name=${RELEASE}-${cache_type}-${ARCH}.$packages_hash.tar.lz4
 	local cache_fname=${EXTER}/cache/rootfs/${cache_name}
 	local display_name=${RELEASE}-${cache_type}-${ARCH}.${packages_hash:0:3}...${packages_hash:29}.tar.lz4
