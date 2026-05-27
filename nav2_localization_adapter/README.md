@@ -1,4 +1,4 @@
-# ATOM01 Navigation Adapter
+# roboparty Navigation Adapter
 
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
 [![Nav2](https://img.shields.io/badge/Nav2-Ready-green.svg)](https://navigation.ros.org/)
@@ -10,7 +10,7 @@
 
 ## Overview
 
-This repository provides the navigation adapter and utility tools for the ATOM01 robot. It serves as a bridge between `robots_localization` (EKF) and the `Nav2` navigation stack, enabling seamless navigation without AMCL when using reliable odometry fusion. It handles the necessary TF transforms (`map` -> `odom` -> `base_link`) and provides robust tools for 2.5D map generation from point clouds.
+This repository provides the navigation adapter and utility tools for the roboparty robot. It serves as a bridge between `robots_localization` (EKF) and the `Nav2` navigation stack, enabling seamless navigation without AMCL when using reliable odometry fusion. It handles the necessary TF transforms (`map` -> `odom` -> `base_link`) and provides robust tools for 2.5D map generation from point clouds.
 
 **Maintainer**: Yongqi Zhang  
 **Contact**: 1205041724@qq.com

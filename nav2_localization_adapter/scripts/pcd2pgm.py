@@ -656,8 +656,8 @@ def save_elevation_map(elevation_map: np.ndarray, output_path: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Convert PCD point cloud to 2.5D traversability map (PGM)")
-    parser.add_argument('-i', '--input', type=str, default="/home/zyq/atom01/atom01_navigation/src/robots_localization_ros2/PCD/garden.pcd", help='Input PCD file path')
-    parser.add_argument('-o', '--output', type=str, default="/home/zyq/atom01/atom01_navigation/src/nav2_localization_adapter/map/", help='Output directory (default: same as input)')
+    parser.add_argument('-i', '--input', type=str, default="/home/zyq/roboparty/roboparty_navigation/src/robots_localization_ros2/PCD/garden.pcd", help='Input PCD file path')
+    parser.add_argument('-o', '--output', type=str, default="/home/zyq/roboparty/roboparty_navigation/src/nav2_localization_adapter/map/", help='Output directory (default: same as input)')
     parser.add_argument('-r', '--resolution', type=float, default=0.05, help='PGM output resolution in meters/pixel (default: 0.05)')
     parser.add_argument('--elevation_resolution', type=float, default=0.05, help='High resolution for elevation map computation (default: 0.02, should be <= resolution)')
     parser.add_argument('--ground_percentile', type=float, default=100.0, help='Ground estimation percentile (default: 90, lower=more robust to noise)')

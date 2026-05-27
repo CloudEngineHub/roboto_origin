@@ -1,4 +1,4 @@
-# ATOM01 Navigation Adapter
+# roboparty Navigation Adapter
 
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
 [![Nav2](https://img.shields.io/badge/Nav2-Ready-green.svg)](https://navigation.ros.org/)
@@ -10,7 +10,7 @@
 
 ## 概述 (Overview)
 
-本仓库提供了 ATOM01 机器人的导航适配器及实用工具。它作为 `robots_localization` (EKF) 与 `Nav2` 导航协议栈之间的桥梁，在使用可靠里程计融合时无需 AMCL 即可实现无缝导航。该功能包处理了必要的 TF 变换 (`map` -> `odom` -> `base_link`)，并提供了从点云生成 2.5D 地图的强大工具。
+本仓库提供了 roboparty 机器人的导航适配器及实用工具。它作为 `robots_localization` (EKF) 与 `Nav2` 导航协议栈之间的桥梁，在使用可靠里程计融合时无需 AMCL 即可实现无缝导航。该功能包处理了必要的 TF 变换 (`map` -> `odom` -> `base_link`)，并提供了从点云生成 2.5D 地图的强大工具。
 
 **维护者**: Yongqi Zhang  
 **联系方式**: 1205041724@qq.com

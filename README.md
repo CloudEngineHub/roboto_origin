@@ -1,4 +1,4 @@
-# atom01_navigation
+# roboparty_navigation
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![ROS 2](https://img.shields.io/badge/ROS-2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
@@ -30,7 +30,7 @@ An autonomous navigation system for mobile robots, integrating high-precision lo
 
 ## Overview
 
-The ATOM01 Navigation System is a comprehensive robotics navigation solution built on ROS 2. It combines 3D LiDAR-based SLAM, UWB positioning, and inertial measurement for robust **3D localization and mapping** in complex environments. The system seamlessly integrates with the Nav2 navigation stack by bridging 3D poses to 2D navigation requirements, enabling autonomous **2D map navigation** for mobile robots.
+The roboparty Navigation System is a comprehensive robotics navigation solution built on ROS 2. It combines 3D LiDAR-based SLAM, UWB positioning, and inertial measurement for robust **3D localization and mapping** in complex environments. The system seamlessly integrates with the Nav2 navigation stack by bridging 3D poses to 2D navigation requirements, enabling autonomous **2D map navigation** for mobile robots.
 
 **Creator**: Yongqi Zhang
 **Contact**: 1205041724@qq.com
@@ -215,15 +215,15 @@ Use the `--recursive` parameter to automatically clone submodules:
 
 ```bash
 cd ~/
-mkdir -p atom01_ws/src
-cd atom01_ws/src
-git clone --recursive https://github.com/Roboparty/atom01_navigation.git
+mkdir -p roboparty_ws/src
+cd roboparty_ws/src
+git clone --recursive https://github.com/Roboparty/roboparty_navigation.git
 ```
 
 ### 2. Build the Workspace
 
 ```bash
-cd ~/atom01_ws
+cd ~/roboparty_ws
 colcon build --symlink-install
 ```
 
@@ -232,7 +232,7 @@ colcon build --symlink-install
 Before using any commands, ensure the workspace environment variables are loaded:
 
 ```bash
-cd ~/atom01_ws
+cd ~/roboparty_ws
 source install/setup.bash
 ```
 

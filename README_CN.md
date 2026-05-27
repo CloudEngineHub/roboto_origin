@@ -1,4 +1,4 @@
-#  atom01_navigation
+#  roboparty_navigation
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![ROS 2](https://img.shields.io/badge/ROS-2-Humble-blue.svg)](https://docs.ros.org/en/humble/index.html)
@@ -30,7 +30,7 @@
 
 ## 概述
 
-ATOM01 导航系统是一个基于 ROS 2 构建的综合性机器人导航解决方案。它结合了基于 3D LiDAR 的 SLAM、UWB 定位和惯性测量，为复杂环境中的机器人提供鲁棒的 3D 定位与建图能力。同时，系统通过适配器将 3D 定位信息转换为 2D 导航所需的格式，与 Nav2 导航堆栈无缝集成，实现了基于 3D 定位和 2D 地图的自主导航功能。
+roboparty 导航系统是一个基于 ROS 2 构建的综合性机器人导航解决方案。它结合了基于 3D LiDAR 的 SLAM、UWB 定位和惯性测量，为复杂环境中的机器人提供鲁棒的 3D 定位与建图能力。同时，系统通过适配器将 3D 定位信息转换为 2D 导航所需的格式，与 Nav2 导航堆栈无缝集成，实现了基于 3D 定位和 2D 地图的自主导航功能。
 
 **创建者**: Yongqi Zhang
 **联系方式**: 1205041724@qq.com
@@ -213,15 +213,15 @@ cd livox_ros_driver2
 
 ```bash
 cd ~/
-mkdir -p atom01_ws/src
-cd atom01_ws/src
-git clone --recursive https://github.com/Roboparty/atom01_navigation.git
+mkdir -p roboparty_ws/src
+cd roboparty_ws/src
+git clone --recursive https://github.com/Roboparty/roboparty_navigation.git
 ```
 
 ### 2. 编译工作空间
 
 ```bash
-cd ~/atom01_ws
+cd ~/roboparty_ws
 colcon build --symlink-install
 ```
 
@@ -230,7 +230,7 @@ colcon build --symlink-install
 在使用任何命令前，请确保已加载工作空间环境变量：
 
 ```bash
-cd ~/atom01_ws
+cd ~/roboparty_ws
 source install/setup.bash
 ```
 
