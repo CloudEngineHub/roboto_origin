@@ -1,12 +1,12 @@
 [submodule "inference"]
 	path = src/inference
-	url = https://github.com/Luo1imasi/inference.git
+	url = https://github.com/Roboparty/inference.git
 [submodule "motors"]
 	path = src/motors
-	url = https://github.com/Luo1imasi/motors.git
+	url = https://github.com/Roboparty/motors.git
 [submodule "imu"]
 	path = src/imu
-	url = https://github.com/Luo1imasi/imu.git
+	url = https://github.com/Roboparty/imu.git
 [submodule "create_ap"]
 	path = tools/create_ap
-	url = https://github.com/Luo1imasi/create_ap.git
+	url = https://github.com/Roboparty/create_ap.git
