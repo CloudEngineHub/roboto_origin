@@ -11,7 +11,7 @@
 
 本仓库提供了使用 ROS2 作为中间件的部署框架，并具有模块化架构，便于无缝定制和扩展。
 
-开源地址：[https://github.com/Roboparty/atom01_deploy](https://github.com/Roboparty/atom01_deploy)
+开源地址：[https://github.com/Roboparty/roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)
 
 **维护者**: 刘志浩
 **联系方式**: <ZhihaoLiu_hit@163.com>
@@ -56,8 +56,8 @@
 5. 接着拉取部署代码：
 
    ```bash
-   git clone https://github.com/Roboparty/atom01_deploy.git
-   cd atom01_deploy
+   git clone https://github.com/Roboparty/roboparty_deploy.git
+   cd roboparty_deploy
    git submodule update --init --recursive
    ```
 
