@@ -12,6 +12,7 @@ The top-level aggregation repository remains `roboto_origin`.
 - Shared framework repositories use `roboparty_*`.
 - Forked or vendored upstream projects keep upstream names and license notices.
 - Top-level `modules/...` paths are not renamed in the first phase.
+- `.scripts/` remains a local operations directory and is not tracked by git.
 - All future top-level changes must go through `dev -> PR -> main`.
 
 ## Stop Rules
@@ -55,13 +56,17 @@ ownership should be tracked in private project management channels.
 
 ### Phase 2: Top-Level Aggregation Update
 
-All changes below happen on `roboto_origin/dev` first:
+Tracked repository changes below happen on `roboto_origin/dev` first:
 
 - Update `README.md` and `README_cn.md`.
-- Update `.scripts/sync_subtrees.sh`.
-- Update `.scripts/README.md`.
-- Add a sync log under `.scripts/logs/`.
+- Update this public migration plan if repository status changes.
 - Open a PR from `dev` to `main`.
+
+Local operations changes are kept outside git:
+
+- Update `.scripts/sync_subtrees.sh` locally if subtree source URLs change.
+- Keep any local sync notes under `.scripts/logs/` if needed.
+- Do not reference untracked `.scripts/` changes as reviewed PR content.
 
 ### Phase 3: Internal Path Migration
 
