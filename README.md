@@ -1,4 +1,4 @@
-# ATOM01 ROS2 Deploy
+# RoboParty ROS2 Deploy
 
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-silver)](https://docs.ros.org/en/humble/index.html)
 ![C++](https://img.shields.io/badge/C++-17-blue)
