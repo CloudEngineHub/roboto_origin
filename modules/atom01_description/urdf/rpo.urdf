@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<robot name="atom01urdf">
+<robot name="rpourdf">
   <link name="base_link">
     <inertial>
       <origin xyz="-0.04700769 -0.00000239 -0.00862801" rpy="0 0 0"/>

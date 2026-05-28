@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<mujoco model="atom01">
+<mujoco model="rpo">
   <compiler angle="radian" meshdir="../meshes/" eulerseq="zyx"/>
   <option timestep="0.001" iterations="100" solver="PGS" gravity="0 0 -9.81">
     <flag frictionloss="enable"/>
@@ -60,13 +60,13 @@
     <mesh name="right_arm_yaw_link" file="right_arm_yaw_link.STL"/>
     <mesh name="right_elbow_pitch_link" file="right_elbow_pitch_link.STL"/>
     <mesh name="right_elbow_yaw_link" file="right_elbow_yaw_link.STL"/>
-    <hfield name="terrain_hfield" file="../terrain_assets/terrain_hfield.png" size="10.0 10.0 3.4 2.0"/>
+    <hfield name="hf0" nrow="200" ncol="200" size="10 5 0.2 .1"/>
   </asset>
   <worldbody>
     <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5.0" dir="0 0 -1" castshadow="false"/>
     <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
-    <geom name="ground" type="hfield" hfield="terrain_hfield" pos="0 0 0" material="matplane" condim="1" conaffinity="15" group="0"/>
-    <body name="base_link" pos="0 0 2.75">
+    <geom name="ground" type="plane" size="0 0 1" pos="0.001 0 0" quat="1 0 0 0" material="matplane" condim="1" conaffinity="15" group="0"/>
+    <body name="base_link" pos="0 0 0.75">
       <site name="imu" size="0.01" pos="0.0 0 0.0"/>
       <inertial pos="-0.04700769 -0.00000239 -0.00862801" mass="5.51295532" fullinertia="0.03052646 0.01536233 0.03006209 0.00000063 -0.00079063 0.00000026"/>
       <joint name="floating_base_joint" type="free" limited="false"/>
