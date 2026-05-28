@@ -30,7 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Batch retargeting tool: convert multiple GMR motion files to Legged Lab format.
+Batch retargeting tool: convert multiple GMR motion files to Isaac Lab format.
 
 Behavior:
  - Reads all .pkl files from the input directory (sorted).
@@ -58,29 +58,29 @@ import pickle
 from isaaclab.app import AppLauncher
 
 # append AppLauncher cli args
-parser = argparse.ArgumentParser(description="Batch retarget GMR -> Legged Lab (multiple files).")
+parser = argparse.ArgumentParser(description="Batch retarget GMR -> Isaac Lab (multiple files).")
 parser.add_argument(
     "--robot",
     type=str,
-    default="atom01", 
-    help="Robot name to use (default: atom01)",
+    default="rpo", 
+    help="Robot name to use (default: rpo)",
 )
 parser.add_argument(
     "--input_dir",
     type=str,
-    default="robolab/data/motions/atom01_gmr",
+    default="robolab/data/motions/rpo_gmr",
     help="Directory containing input GMR .pkl files",
 )
 parser.add_argument(
     "--output_dir",
     type=str,
-    default="robolab/data/motions/atom01_lab",
+    default="robolab/data/motions/rpo_lab",
     help="Directory to write converted .pkl files",
 )
 parser.add_argument(
     "--config_file",
     type=str,
-    default="robolab/scripts/tools/retarget/config/atom01.yaml",
+    default="robolab/scripts/tools/retarget/config/rpo.yaml",
     help="Path to YAML config containing gmr_dof_names, lab_dof_names, lab_key_body_names",
 )
 parser.add_argument(
@@ -107,8 +107,8 @@ import isaaclab.sim as sim_utils
 from isaaclab.scene import InteractiveScene
 
 # load robot cfg as single_retarget does
-if args_cli.robot == "atom01":
-    from robolab.assets.robots.roboparty import ATOM01_CFG as ROBOT_CFG
+if args_cli.robot == "rpo":
+    from robolab.assets.robots.roboparty import RPO_CFG as ROBOT_CFG
 else:
     raise ValueError(f"Robot {args_cli.robot} not supported.")
 

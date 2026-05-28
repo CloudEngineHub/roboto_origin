@@ -38,21 +38,21 @@ from . import agents
 ##
 
 gym.register(
-    id="Atom01-BeyondMimic",
+    id="RPO-BeyondMimic",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.atom01_beyondmimic_env_cfg:Atom01BeyondMimicEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.atom01_beyondmimic_agent_cfg:Atom01BeyondMimicPPORunnerCfg",
+        "env_cfg_entry_point": f"{__name__}.rpo_beyondmimic_env_cfg:RPOBeyondMimicEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rpo_beyondmimic_agent_cfg:RPOBeyondMimicPPORunnerCfg",
     },
 )
 
 gym.register(
-    id="Atom01-Getup-Mimic",
+    id="RPO-Getup-Mimic",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.atom01_getup_mimic_env_cfg:Atom01GetupMimicEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.atom01_getup_mimic_agent_cfg:Atom01GetupMimicPPORunnerCfg",
+        "env_cfg_entry_point": f"{__name__}.rpo_getup_mimic_env_cfg:RPOGetupMimicEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rpo_getup_mimic_agent_cfg:RPOGetupMimicPPORunnerCfg",
     },
 )

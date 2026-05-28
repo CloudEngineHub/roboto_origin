@@ -39,21 +39,21 @@ from . import mdp
 import gymnasium as gym
 
 gym.register(
-    id="Atom01-Flat",
+    id="RPO-Flat",
     entry_point=f"{__name__}.base_env:BaseEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.atom01_env_cfg:ATOM01FlatEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.atom01_agent_cfg:ATOM01FlatAgentCfg",
+        "env_cfg_entry_point": f"{__name__}.rpo_env_cfg:RPOFlatEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rpo_agent_cfg:RPOFlatAgentCfg",
     },
 )
 
 gym.register(
-    id="Atom01-Rough",
+    id="RPO-Rough",
     entry_point=f"{__name__}.base_env:BaseEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.atom01_env_cfg:ATOM01RoughEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.atom01_agent_cfg:ATOM01RoughAgentCfg",
+        "env_cfg_entry_point": f"{__name__}.rpo_env_cfg:RPORoughEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rpo_agent_cfg:RPORoughAgentCfg",
     },
 )

@@ -141,7 +141,7 @@ if __name__ == '__main__':
     class Sim2simCfg():
 
         class sim_config:
-            mujoco_model_path = f'{ISAAC_DATA_DIR}/robots/roboparty/atom01/mjcf/atom01.xml'
+            mujoco_model_path = f'{ISAAC_DATA_DIR}/robots/roboparty/rpo/mjcf/rpo.xml'
             sim_duration = 1000.0
             dt = 0.02  #50hz
             

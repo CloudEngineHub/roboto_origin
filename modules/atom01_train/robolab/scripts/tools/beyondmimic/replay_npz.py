@@ -64,7 +64,7 @@ simulation_app = app_launcher.app
 ##
 # Pre-defined configs
 ##
-from robolab.assets.robots import ATOM01_CFG
+from robolab.assets.robots import RPO_CFG
 from robolab.tasks.manager_based.beyondmimic.mdp import MotionLoader
 
 import isaaclab.sim as sim_utils
@@ -90,7 +90,7 @@ class ReplayMotionsSceneCfg(InteractiveSceneCfg):
     )
 
     # articulation
-    robot: ArticulationCfg = ATOM01_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot: ArticulationCfg = RPO_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 
 def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):

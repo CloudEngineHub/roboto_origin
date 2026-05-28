@@ -1,4 +1,4 @@
-# ATOM01-Train
+# roboparty_train
 
 [![IsaacSim](https://img.shields.io/badge/IsaacSim-5.1.0-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
 [![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.3.2-silver)](https://isaac-sim.github.io/IsaacLab)
@@ -15,8 +15,8 @@
 
 本仓库提供了使用 IsaacLab 训练足式机器人的工作流。它提供环境的高透明度和低重构难度，并使用 isaaclab 组件简化流程。代码库基于 IsaacLab 构建，支持 Sim2Sim 传输到 MuJoCo，并具有模块化架构，便于无缝定制和扩展。
 
-**维护者**: 刘志浩
-**联系方式**: ZhihaoLiu_hit@163.com
+**维护者**: RoboParty
+**联系方式**: GitHub Issues
 
 **主要特性:**
 
@@ -28,20 +28,20 @@
 
 ## 安装
 
-ATOM01-Train 基于最新版本的 IsaacSim/IsaacLab 构建，建议跟随 ATOM01-Train 的最新更新。
+roboparty_train 基于最新版本的 IsaacSim/IsaacLab 构建，建议跟随 roboparty_train 的最新更新。
 
 - 按照[安装指南](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html)安装 Isaac Lab。我们推荐使用 conda 安装，因为它简化了从终端调用 Python 脚本的过程。
 
 - 独立于 Isaac Lab 安装克隆此仓库（即在 `IsaacLab` 目录之外）：
 
 ```bash
-git clone https://github.com/Roboparty/atom01_train.git
+git clone https://github.com/Roboparty/roboparty_train.git
 ```
 
 - 使用已安装 Isaac Lab 的 python 解释器安装库：
 
 ```bash
-cd atom01_train
+cd roboparty_train
 git submodule update --init --recursive
 cd robolab
 pip install -e .
@@ -68,16 +68,32 @@ python robolab/scripts/rsl_rl/train.py --task=<ENV_NAME> --headless --logger=ten
 ```bash
 python robolab/scripts/rsl_rl/play.py --task=<ENV_NAME> --num_envs=1
 ```
+### 测试(AMP)
+```bash
+python robolab/scripts/rsl_rl/play_amp.py --task=RPO-AMP-Play --num_envs=1
+```
+### 测试(Beyondmimic)
+```bash
+python robolab/scripts/rsl_rl/play_bm.py --task=RPO-BeyondMimic --num_envs=1
+```
+### 测试(Parkour)
+```bash
+python robolab/scripts/rsl_rl/play_parkour.py --task=RPO-Parkour-Play --num_envs=1
+```
+导出 onnx 模型时, 请设置 `num_envs=1` 并添加 `--exportonnx`
+```bash
+python robolab/scripts/rsl_rl/play_parkour.py --task=RPO-Parkour-Play --num_envs=1 --exportonnx
+```
 
 ### Sim2Sim
 ```bash
-python robolab/scripts/mujoco/sim2sim_atom01.py --load_model "{exported/policy.pt model full path here}"
+python robolab/scripts/mujoco/sim2sim_rpo.py --load_model "{exported/policy.pt model full path here}"
 ```
 
 ### 数据集准备
 对于 AMP 和 BeyondMimic 获取数据集的工作流程, 请查看 [GMR](https://github.com/Roboparty/GMR).
 
-通过GMR获得的数据集中的关节顺序与机器人的 URDF 和 XML 中的顺序一致，但这与 Isaac Lab 所使用的顺序不同。因此，我们需要准备一个包含关节映射信息的`.yaml`文件（如`scripts/tools/retarget/config/atom01.yaml`所示），并在训练前使用`scripts/tools/retarget/dataset_retarget.py`重新排序关节序列。
+通过GMR获得的数据集中的关节顺序与机器人的 URDF 和 XML 中的顺序一致，但这与 Isaac Lab 所使用的顺序不同。因此，我们需要准备一个包含关节映射信息的`.yaml`文件（如`scripts/tools/retarget/config/rpo.yaml`所示），并在训练前使用`scripts/tools/retarget/dataset_retarget.py`重新排序关节序列。
 
 
 ## 参考和致谢
@@ -87,3 +103,4 @@ python robolab/scripts/mujoco/sim2sim_atom01.py --load_model "{exported/policy.p
 * [legged_gym](https://github.com/leggedrobotics/legged_gym)
 * [legged_lab](https://github.com/zitongbai/legged_lab)
 * [robot_lab](https://github.com/fan-ziqi/robot_lab)
+* [InstinctLab](https://github.com/project-instinct/InstinctLab)

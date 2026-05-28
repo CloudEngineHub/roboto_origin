@@ -34,11 +34,11 @@ import gymnasium as gym
 from . import agents
 
 gym.register(
-    id="Atom01-Interrupt",
+    id="RPO-Interrupt",
     entry_point=f"{__name__}.interrupt_env:InterruptEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.atom01_interrupt_env_cfg:ATOM01InterruptEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.atom01_interrupt_agent_cfg:ATOM01InterruptAgentCfg",
+        "env_cfg_entry_point": f"{__name__}.rpo_interrupt_env_cfg:RPOInterruptEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rpo_interrupt_agent_cfg:RPOInterruptAgentCfg",
     },
 )

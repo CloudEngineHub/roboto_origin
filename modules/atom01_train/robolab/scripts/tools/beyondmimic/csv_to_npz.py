@@ -48,7 +48,7 @@ from isaaclab.app import AppLauncher
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Replay motion from csv file and output to npz file.")
 parser.add_argument("--input_file", "-f", type=str, 
-                    default="robolab/data/motions/atom01_bm/getup.csv", 
+                    default="robolab/data/motions/rpo_bm/getup.csv", 
                     help="The path to the input motion csv file.")
 parser.add_argument("--input_fps", type=int, default=30, help="The fps of the input motion.")
 parser.add_argument(
@@ -86,7 +86,7 @@ import torch
 ##
 # Pre-defined configs
 ##
-from robolab.assets.robots import ATOM01_CFG
+from robolab.assets.robots import RPO_CFG
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
@@ -114,7 +114,7 @@ class ReplayMotionsSceneCfg(InteractiveSceneCfg):
     )
 
     # articulation
-    robot: ArticulationCfg = ATOM01_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot: ArticulationCfg = RPO_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 
 class MotionLoader:

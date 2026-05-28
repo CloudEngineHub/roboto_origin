@@ -1,4 +1,4 @@
-# atom01_firmware - ROBOTO_ORIGIN 固件模块
+# roboparty_firmware - ROBOTO_ORIGIN 固件模块
 
 ROBOTO_ORIGIN 人形机器人的固件及板卡镜像构建系统。
 
@@ -18,7 +18,7 @@ ROBOTO_ORIGIN 人形机器人的固件及板卡镜像构建系统。
 
 ```bash
 # 克隆仓库（含子模块）
-git clone --recursive https://github.com/Roboparty/atom01_firmware.git
+git clone --recursive https://github.com/Roboparty/roboparty_firmware.git
 
 # 或克隆后初始化子模块
 git submodule update --init --recursive
@@ -29,7 +29,7 @@ git submodule update --init --recursive
 ## 目录结构
 
 ```
-atom01_firmware/
+roboparty_firmware/
 ├── roboto_usb2can/      # USB2CAN 固件源码
 ├── orangepi-build/      # OrangePi 构建系统
 │   └── external/cache/sources/bms_daemon/  # BMS 守护进程（嵌套）
@@ -40,10 +40,10 @@ atom01_firmware/
 
 ## 关联仓库
 
-- **[Atom01_hardware](https://github.com/Roboparty/Atom01_hardware)** - 硬件设计文件
-- **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)** - ROS2 部署框架
-- **[atom01_train](https://github.com/Roboparty/atom01_train)** - RL 训练环境
-- **[atom01_description](https://github.com/Roboparty/atom01_description)** - URDF 模型文件
+- **[rpo_hardware](https://github.com/Roboparty/rpo_hardware)** - 硬件设计文件
+- **[roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)** - ROS2 部署框架
+- **[roboparty_train](https://github.com/Roboparty/roboparty_train)** - RL 训练环境
+- **[rpo_description](https://github.com/Roboparty/rpo_description)** - URDF 模型文件
 
 ## 许可证
 
