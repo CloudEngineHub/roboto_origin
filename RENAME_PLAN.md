@@ -30,14 +30,14 @@ ownership should be tracked in private project management channels.
 
 | Old repository | New repository | Status | Notes |
 | --- | --- | --- | --- |
-| `Atom01_hardware` | `rpo_hardware` | Pending | Old repo still active as of 2026-05-28. |
+| `Atom01_hardware` | `rpo_hardware` | Done | GitHub repo renamed. Snapshot path is retained for compatibility. |
 | `atom01_appearance` | `rpo_appearance` | Done | GitHub repo renamed. README migrated to RPO wording. STL filenames kept for compatibility. |
 | `atom01_description` | `rpo_description` | Done, needs confirmation | GitHub repo rename observed. Internal model/path migration status needs confirmation. |
 | `atom01_deploy` | `roboparty_deploy` | Done, needs confirmation | GitHub repo rename observed. RPO-specific configs should remain documented as the current default. |
-| `atom01_firmware` | `roboparty_firmware` | Pending | Old repo still active as of 2026-05-28. Forked/vendor code must preserve upstream names and licenses. |
+| `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Forked/vendor code must preserve upstream names and licenses. |
 | `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. RPO-specific training assets should move under explicit product paths over time. |
 | `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Default branch is `master`. |
-| `Atom_xr_teleop` | TBD | Pending | Decide between `roboparty_xr_teleop` and product-specific naming. |
+| `Atom_xr_teleop` | TBD | Deferred | Not part of the current migration batch. |
 
 ## Migration Phases
 

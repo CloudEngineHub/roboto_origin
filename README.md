@@ -32,12 +32,14 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 
 | Sub-Repository                                                            | Contribution Areas                                                                         |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| **[Atom01_hardware](https://github.com/Roboparty/Atom01_hardware)**       | Mechanical structure design, CAD drawings, PCB design, BOM improvements                    |
-| **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)**           | ROS2 driver development, middleware modules, deployment configs, IMU/motor integration     |
-| **[atom01_train](https://github.com/Roboparty/atom01_train)**             | RL algorithms, training environments, simulation configs, Sim2Sim transfer                 |
-| **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF kinematic/dynamic descriptions, visual/collision meshes, joint parameter optimization |
-| **[atom01_firmware](https://github.com/Roboparty/atom01_firmware)**       | Firmware development, embedded software, USB2CAN, OrangePi build system, system daemon management |
-| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | Exterior shell design, appearance structure, visual references, surface and assembly notes. Static Display Only; Printing Not Recommended |
+| **[rpo_hardware](https://github.com/Roboparty/rpo_hardware)**             | RPO mechanical structure design, CAD drawings, PCB design, BOM improvements                |
+| **[roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)**     | ROS2 deployment framework, middleware modules, deployment configs, IMU/motor integration   |
+| **[roboparty_train](https://github.com/Roboparty/roboparty_train)**       | RL algorithms, training environments, simulation configs, Sim2Sim transfer                 |
+| **[rpo_description](https://github.com/Roboparty/rpo_description)**       | RPO URDF/MJCF kinematic and dynamic descriptions, visual/collision meshes                 |
+| **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | Firmware development, embedded software, USB2CAN, OrangePi/RDK build tooling              |
+| **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | RPO exterior shell design assets and prototype enclosure documentation. Static Display Only; Printing Not Recommended |
+
+**Compatibility note:** Some snapshot paths under `modules/...` still use the historical Atom01/atom01 directory names during the naming transition.
 
 **For detailed contribution guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
@@ -60,12 +62,12 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 
 | Module Name            | Description                                                                                                                                               | Repository Link                                 |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Atom01_hardware**    | Hardware design files for Atom01 robot, including structural drawings and design materials                                                                | https://github.com/Roboparty/Atom01_hardware    |
-| **atom01_deploy**      | ROS2 deployment framework with modular architecture middleware for robot deployment and control, supporting IMU, motor drivers, inference, etc.           | https://github.com/Roboparty/atom01_deploy      |
-| **atom01_train**       | Direct IsaacLab training workflow providing high transparency and low refactoring difficulty RL training environment, supports Sim2Sim transfer to MuJoCo | https://github.com/Roboparty/atom01_train       |
-| **atom01_description** | URDF model files for Atom01 robot, containing kinematic and dynamic descriptions for simulation and visualization                                         | https://github.com/Roboparty/atom01_description |
-| **atom01_firmware**    | Firmware module for Atom01 robot, providing embedded software support including USB2CAN, OrangePi build system, and system daemon management              | https://github.com/Roboparty/atom01_firmware    |
-| **atom01_appearance**  | Appearance design files for Atom01 robot, including exterior shell design assets and prototype enclosure documentation.Static Display Only; Printing Not Recommended  | https://github.com/Roboparty/atom01_appearance  |
+| **rpo_hardware**        | Hardware design files for the RPO robot, including structural drawings and design materials                                                              | https://github.com/Roboparty/rpo_hardware       |
+| **roboparty_deploy**    | ROS2 deployment framework with modular architecture middleware for robot deployment and control, supporting IMU, motor drivers, inference, etc.           | https://github.com/Roboparty/roboparty_deploy   |
+| **roboparty_train**     | Direct IsaacLab training workflow providing high transparency and low refactoring difficulty RL training environment, supports Sim2Sim transfer to MuJoCo | https://github.com/Roboparty/roboparty_train    |
+| **rpo_description**     | RPO URDF/MJCF model files containing kinematic and dynamic descriptions for simulation and visualization                                                 | https://github.com/Roboparty/rpo_description    |
+| **roboparty_firmware**  | Firmware module providing embedded software support including USB2CAN, OrangePi/RDK build tooling, and system daemon management                           | https://github.com/Roboparty/roboparty_firmware |
+| **rpo_appearance**      | RPO appearance design files, including exterior shell design assets and prototype enclosure documentation. Static Display Only; Printing Not Recommended  | https://github.com/Roboparty/rpo_appearance     |
 
 ---
 
