@@ -1,4 +1,4 @@
-# atom01_firmware - ROBOTO_ORIGIN Firmware Module
+# roboparty_firmware - ROBOTO_ORIGIN Firmware Module
 
 Firmware and build systems for the ROBOTO_ORIGIN humanoid robot.
 
@@ -18,7 +18,7 @@ This module contains firmware components and board image build systems required 
 
 ```bash
 # Clone repository with submodules
-git clone --recursive https://github.com/Roboparty/atom01_firmware.git
+git clone --recursive https://github.com/Roboparty/roboparty_firmware.git
 
 # Or initialize submodules after cloning
 git submodule update --init --recursive
@@ -27,7 +27,7 @@ git submodule update --init --recursive
 ## Directory Structure
 
 ```
-atom01_firmware/
+roboparty_firmware/
 ├── roboto_usb2can/      # USB2CAN firmware source
 ├── orangepi-build/      # OrangePi build system
 │   └── external/cache/sources/bms_daemon/  # BMS daemon (nested)
@@ -38,10 +38,10 @@ atom01_firmware/
 
 ## Related Repositories
 
-- **[Atom01_hardware](https://github.com/Roboparty/Atom01_hardware)** - Hardware design files
-- **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)** - ROS2 deployment framework
-- **[atom01_train](https://github.com/Roboparty/atom01_train)** - RL training environment
-- **[atom01_description](https://github.com/Roboparty/atom01_description)** - URDF model files
+- **[rpo_hardware](https://github.com/Roboparty/rpo_hardware)** - Hardware design files
+- **[roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)** - ROS2 deployment framework
+- **[roboparty_train](https://github.com/Roboparty/roboparty_train)** - RL training environment
+- **[rpo_description](https://github.com/Roboparty/rpo_description)** - URDF model files
 
 ## License
 

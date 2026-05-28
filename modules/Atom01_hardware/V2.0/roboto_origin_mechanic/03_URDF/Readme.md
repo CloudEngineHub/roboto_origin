@@ -1,5 +1,5 @@
-This is the URDF file of Atom01, a product of Roboparty.
-![Atom01 URDF 模型](https://github.com/Roboparty/Atom01_urdf/blob/main/atom01_urdf.png)  
+This is the URDF file of RPO, a product of RoboParty.
+![RPO URDF model](https://github.com/Roboparty/rpo_description/blob/main/urdf/rpo_urdf.png)
   <link
     name="left_ankle_roll_link">
     <inertial>

@@ -1,4 +1,4 @@
-# ATOM01-Train
+# roboparty_train
 
 [![IsaacSim](https://img.shields.io/badge/IsaacSim-5.1.0-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
 [![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.3.2-silver)](https://isaac-sim.github.io/IsaacLab)
@@ -15,8 +15,8 @@
 
 This repository provides a workflow for training a legged robot using IsaacLab. It provides high transparency and low refactoring difficulty of the environment, and uses isaaclab components to simplify the workflow. The codebase is built on IsaacLab, supports Sim2Sim transfer to MuJoCo, and features a modular architecture for seamless customization and extension. 
 
-**Maintainer**: Zhihao Liu
-**Contact**: ZhihaoLiu_hit@163.com
+**Maintainer**: RoboParty
+**Contact**: GitHub Issues
 
 **Key Features:**
 
@@ -28,20 +28,20 @@ This repository provides a workflow for training a legged robot using IsaacLab. 
 
 ## Installation
 
-ATOM01-Train is built against the latest version of Isaacsim/IsaacLab. It is recommended to follow the latest updates of ATOM01-Train.
+roboparty_train is built against the latest version of IsaacSim/IsaacLab. It is recommended to follow the latest updates of roboparty_train.
 
 - Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
 
 - Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
 ```bash
-git clone https://github.com/Roboparty/atom01_train.git
+git clone https://github.com/Roboparty/roboparty_train.git
 ```
 
 - Using a python interpreter that has Isaac Lab installed, install the library
 
 ```bash
-cd atom01_train
+cd roboparty_train
 git submodule update --init --recursive
 cd robolab
 pip install -e .

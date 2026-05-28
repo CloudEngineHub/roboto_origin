@@ -13,8 +13,8 @@ This repository provides a deployment framework using ROS2 as middleware with a 
 
 Open-source repository: [https://github.com/Roboparty/roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)
 
-**Maintainer**: Zhihao Liu
-**Contact**: <ZhihaoLiu_hit@163.com>
+**Maintainer**: RoboParty
+**Contact**: GitHub Issues
 
 **Key Features:**
 

@@ -13,8 +13,8 @@
 
 开源地址：[https://github.com/Roboparty/roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)
 
-**维护者**: 刘志浩
-**联系方式**: <ZhihaoLiu_hit@163.com>
+**维护者**: RoboParty
+**联系方式**: GitHub Issues
 
 **主要特性:**
 
