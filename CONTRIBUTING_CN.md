@@ -29,7 +29,7 @@
 | **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | 固件模块           | 嵌入式软件、USB2CAN、OrangePi/RDK构建工具、系统守护进程管理 |
 | **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | 外观件设计文件     | 外壳造型、外观结构、视觉参考、表面处理与装配说明 |
 | **[roboparty_navigation](https://github.com/Roboparty/roboparty_navigation)** | 导航应用模块   | 导航、定位及相关 ROS2 应用模块                |
-| **[Atom_xr_teleop](https://github.com/Roboparty/Atom_xr_teleop)**         | XR 遥操作应用      | XR 遥操作界面、串流与机器人控制集成           |
+| **[roboparty_xr_teleop](https://github.com/Roboparty/roboparty_xr_teleop)** | XR 遥操作应用      | XR 遥操作界面、串流与机器人控制集成           |
 
 ### 2. Fork 并克隆目标子仓库
 

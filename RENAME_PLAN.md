@@ -11,7 +11,7 @@ The top-level aggregation repository remains `roboto_origin`.
 - Product-specific repositories use `rpo_*`.
 - Shared framework repositories use `roboparty_*`.
 - Forked or vendored upstream projects keep upstream names and license notices.
-- Top-level `modules/...` snapshot paths use current public repository names.
+- Top-level `modules/...` snapshot paths use target public repository names.
 - `.scripts/` remains a local operations directory and is not tracked by git.
 - All future top-level changes must go through `dev -> PR -> main`.
 
@@ -37,7 +37,7 @@ ownership should be tracked in private project management channels.
 | `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_firmware`; forked/vendor code must preserve upstream names and licenses. |
 | `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_train`; RPO-specific training assets should move under explicit product paths over time. |
 | `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Snapshot path added at `modules/roboparty_navigation`; default branch is `master`. |
-| `Atom_xr_teleop` | TBD | Included, rename deferred | Snapshot path added at `modules/Atom_xr_teleop`. Public repo still uses the historical name; choose the target name before renaming. |
+| `Atom_xr_teleop` | `roboparty_xr_teleop` | Planned, top-level path updated | Snapshot path migrated to `modules/roboparty_xr_teleop`. Public repo rename still needs to be completed before this link becomes live. |
 
 ## Migration Phases
 
@@ -72,7 +72,7 @@ Local operations changes are kept outside git:
 
 This phase is optional and must be handled with separate PRs:
 
-- Keep top-level `modules/...` snapshot paths aligned with public repository names.
+- Keep top-level `modules/...` snapshot paths aligned with target public repository names.
 - Migrate internal package names, scripts, model files, ROS package names, and runtime paths only after each sub-repository owner confirms the compatibility plan.
 - Provide compatibility aliases or clear migration notes when paths, scripts, model files, or ROS package names change.
 - Validate at least the minimal documented build or usage path for each affected repository.
