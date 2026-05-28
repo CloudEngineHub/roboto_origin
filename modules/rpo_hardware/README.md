@@ -1,14 +1,14 @@
-# ATOM01_HARDWARE - RoboParty Humanoid Robot Open Source Project
+# rpo_hardware - RoboParty RPO Humanoid Robot Hardware
 
 **[中文](./README_cn.md)** | English
 
-> **Project Introduction:** This repository serves as the core open-source hardware library for the **ATOM01** series of humanoid robots. We are committed to lowering the barrier to entry for bipedal robot development by providing a complete solution encompassing mechanical design, PCB schematics, and firmware.
+> **Project Introduction:** This repository is the open-source hardware library for the **RPO / Roboto Origin** humanoid robot platform. It provides mechanical design files, PCB schematics, manufacturing assets, and versioned hardware documentation for developers and builders.
 
 ---
 
 ## 📂 Repository Overview (Structure)
 
-The project is managed hierarchically based on **version iterations**, containing two primary development branches: **V1.0** and **V2.0**.
+The project is organized by **hardware version**, with two primary branches of design files: **V1.0** and **V2.0**.
 
 ### 📊 V1.0 vs V2.0 Feature Comparison
 
@@ -21,16 +21,16 @@ The project is managed hierarchically based on **version iterations**, containin
 
 ---
 
-### 🔧 V1.0 (atom01_mechanic / atom01_pcb)
-**Positioning:** Original version containing the early mechanical structure and discrete circuit board design.
+### 🔧 V1.0 Legacy Hardware (`atom01_mechanic` / `atom01_pcb`)
+**Positioning:** Original legacy version containing the early mechanical structure and discrete circuit board design. The historical directory names are retained for compatibility with existing files and references.
 
 -   **Core Components:**
     -   **Mechanical:** Basic bipedal structure design, including early assembly documentation and URDF files.
     -   **Hardware:** Separate Power and Communication boards (Roboto_Power, Roboto_Usb2Can).
 -   **Target Audience:** Limited to legacy users still utilizing the first-generation hardware for reference.
 
-### 🚀 V2.0 (roboto_origin_mechanic / roboto_origin_pcb)
-**Positioning:** Brand new optimized version, comprehensively restructured for usability, stability, and integration.
+### 🚀 V2.0 RPO / Roboto Origin Hardware (`roboto_origin_mechanic` / `roboto_origin_pcb`)
+**Positioning:** Current recommended version, comprehensively restructured for usability, stability, and integration.
 
 #### ✨ Core Update Highlights
 -   **🚀 Hardware System: Single Board Integration**
@@ -49,13 +49,19 @@ The project is managed hierarchically based on **version iterations**, containin
 
 Please enter the corresponding directory based on your hardware version to obtain detailed documentation:
 
-.  **V2.0 Users (Recommended):**
+1. **V2.0 Users (Recommended):**
     -   **Mechanical Drawings:** Enter `V2.0/roboto_origin_mechanic/` to view assembly drawings and STL files.
     -   **PCB Files:** Enter `V2.0/roboto_origin_pcb/` to obtain Gerber files and schematics.
-.  **V1.0 Users:**
+2. **V1.0 Legacy Users:**
     -   **Mechanical Drawings:** Enter `V1.0/atom01_mechanic/`.
     -   **PCB Files:** Enter `V1.0/atom01_pcb/`.
 
 ---
 
 > **Note:** The mechanical structure and hardware interfaces of **V2.0 are not compatible with V1.0**. Please confirm the version before assembly or purchasing materials.
+
+## Naming Notes
+
+This repository was migrated from the historical Atom01 naming scheme to `rpo_hardware`.
+Some V1.0 directories and model files still use historical `atom01` names as compatibility paths.
+Do not rename those paths unless the related CAD, URDF, PCB, and documentation references are updated and validated together.

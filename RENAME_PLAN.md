@@ -30,11 +30,11 @@ ownership should be tracked in private project management channels.
 
 | Old repository | New repository | Status | Notes |
 | --- | --- | --- | --- |
-| `Atom01_hardware` | `rpo_hardware` | Done | GitHub repo renamed. Snapshot path migrated to `modules/rpo_hardware`. |
+| `Atom01_hardware` | `rpo_hardware` | Done | GitHub repo renamed. Snapshot path migrated to `modules/rpo_hardware`; public README files migrated to RPO naming, while V1.0 legacy atom01 paths are retained for compatibility. |
 | `atom01_appearance` | `rpo_appearance` | Done | GitHub repo renamed. Snapshot path migrated to `modules/rpo_appearance`; STL filenames kept for compatibility. |
 | `atom01_description` | `rpo_description` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/rpo_description`; internal model/path migration status needs confirmation. |
 | `atom01_deploy` | `roboparty_deploy` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_deploy`; RPO-specific configs should remain documented as the current default. |
-| `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_firmware`; forked/vendor code must preserve upstream names and licenses. |
+| `atom01_firmware` | `roboparty_firmware` | Done | GitHub repo renamed. Snapshot path migrated to `modules/roboparty_firmware`; public README files migrated to Roboparty naming, while forked/vendor code preserves upstream names and licenses. |
 | `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_train`; RPO-specific training assets should move under explicit product paths over time. |
 | `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Snapshot path added at `modules/roboparty_navigation`; default branch is `master`. |
 | `Atom_xr_teleop` | `roboparty_xr_teleop` | Done, needs confirmation | GitHub repo renamed. Snapshot path migrated to `modules/roboparty_xr_teleop`; public docs and Python entrypoint migrated, while historical Atom01 model asset paths are retained for compatibility. |

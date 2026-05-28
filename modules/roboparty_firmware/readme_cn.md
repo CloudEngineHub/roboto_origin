@@ -1,6 +1,6 @@
-# roboparty_firmware - ROBOTO_ORIGIN 固件模块
+# roboparty_firmware
 
-ROBOTO_ORIGIN 人形机器人的固件及板卡镜像构建系统。
+面向 Roboparty 机器人（包括 RPO/Roboto 平台）的固件及板卡镜像构建系统仓库。
 
 ## 概述
 
@@ -52,3 +52,8 @@ roboparty_firmware/
 ## 贡献指南
 
 请参阅主仓库 [roboto_origin](https://github.com/Roboparty/roboto_origin) 了解贡献指南。
+
+## 说明
+
+部分第三方或上游构建系统、固件组件会保留原始名称、许可证和目录结构。
+除非同步更新并验证对应构建脚本，否则不建议直接重命名这些兼容路径。
