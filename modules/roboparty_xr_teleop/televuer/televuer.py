@@ -1,4 +1,4 @@
-# Modified from Unitree xr_teleoperate for Atom robot teleoperation.
+# Modified from Unitree xr_teleoperate for RPO robot teleoperation.
 from vuer import Vuer
 from vuer.schemas import ImageBackground, Hands, MotionControllers, WebRTCVideoPlane, WebRTCStereoVideoPlane
 from multiprocessing import Value, Array, Process, shared_memory

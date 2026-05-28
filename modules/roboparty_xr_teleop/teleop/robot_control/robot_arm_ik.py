@@ -1,4 +1,4 @@
-# Modified from Unitree xr_teleoperate for Atom robot teleoperation.
+# Modified from Unitree xr_teleoperate for RPO robot teleoperation.
 from pathlib import Path
 
 import casadi
@@ -20,12 +20,14 @@ def _asset_paths(unit_test: bool) -> tuple[str, str]:
     repo_root = Path(__file__).resolve().parents[2]
     if unit_test:
         repo_root = repo_root.parent
+    # The asset directory still uses the historical Atom01 name because the
+    # URDF/MJCF/USD files and mesh references depend on that path.
     urdf_path = repo_root / "assets" / "Atom01_urdf" / "urdf" / "atom01.urdf"
     meshes_path = repo_root / "assets" / "Atom01_urdf" / "meshes"
     return str(urdf_path), str(meshes_path)
 
 
-class Atom_23_ArmIK:
+class RPOArmIK:
     def __init__(self, Unit_Test: bool = False, Visualization: bool = False):
         np.set_printoptions(precision=5, suppress=True, linewidth=200)
 
@@ -262,6 +264,7 @@ class Atom_23_ArmIK:
                 self.vis.display(sol_q)
 
             return sol_q, sol_tauff
+
         except Exception as exc:
             try:
                 stats = self.opti.stats()
@@ -296,3 +299,6 @@ class Atom_23_ArmIK:
                 right_wrist,
             )
             return current_lr_arm_motor_q, np.zeros(self.reduced_robot.model.nv)
+
+
+Atom_23_ArmIK = RPOArmIK

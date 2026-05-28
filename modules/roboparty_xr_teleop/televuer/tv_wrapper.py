@@ -1,4 +1,4 @@
-# Modified from Unitree xr_teleoperate for Atom robot teleoperation.
+# Modified from Unitree xr_teleoperate for RPO robot teleoperation.
 import numpy as np
 from .televuer import TeleVuer
 from dataclasses import dataclass, field
