@@ -70,30 +70,30 @@ python robolab/scripts/rsl_rl/play.py --task=<ENV_NAME> --num_envs=1
 ```
 ### Play(AMP)
 ```bash
-python robolab/scripts/rsl_rl/play_amp.py --task=Atom01-AMP-Play --num_envs=1
+python robolab/scripts/rsl_rl/play_amp.py --task=RPO-AMP-Play --num_envs=1
 ```
 ### Play(Beyondmimic)
 ```bash
-python robolab/scripts/rsl_rl/play_bm.py --task=Atom01-BeyondMimic --num_envs=1
+python robolab/scripts/rsl_rl/play_bm.py --task=RPO-BeyondMimic --num_envs=1
 ```
 ### Play(Parkour)
 ```bash
-python robolab/scripts/rsl_rl/play_parkour.py --task=Atom01-Parkour-Play --num_envs=1
+python robolab/scripts/rsl_rl/play_parkour.py --task=RPO-Parkour-Play --num_envs=1
 ```
 To export onnx model, please set `num_envs=1` and use `--exportonnx`
 ```bash
-python robolab/scripts/rsl_rl/play_parkour.py --task=Atom01-Parkour-Play --num_envs=1 --exportonnx
+python robolab/scripts/rsl_rl/play_parkour.py --task=RPO-Parkour-Play --num_envs=1 --exportonnx
 ```
 
 ### Sim2Sim
 ```bash
-python robolab/scripts/mujoco/sim2sim_atom01.py --load_model "{exported/policy.pt model full path here}"
+python robolab/scripts/mujoco/sim2sim_rpo.py --load_model "{exported/policy.pt model full path here}"
 ```
 
 ### Prepare Motion Data
 To obtain dataset for AMP and BeyondMimic, please visit [GMR](https://github.com/Roboparty/GMR).
 
-The joint order in the dataset obtained via GMR corresponds to the order in Robot URDF and XML, which differs from the one used in Isaac Lab. Therefore, we need to prepare a `.yaml` file which contains joint mapping information like the one showed in `scripts/tools/retarget/config/atom01.yaml`, and then reorder the joint sequence using `scripts/tools/retarget/dataset_retarget.py` before training.
+The joint order in the dataset obtained via GMR corresponds to the order in Robot URDF and XML, which differs from the one used in Isaac Lab. Therefore, we need to prepare a `.yaml` file which contains joint mapping information like the one showed in `scripts/tools/retarget/config/rpo.yaml`, and then reorder the joint sequence using `scripts/tools/retarget/dataset_retarget.py` before training.
 
 ## References and Thanks
 This project repository builds upon the shoulders of giants.
