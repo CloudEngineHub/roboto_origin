@@ -37,7 +37,7 @@ ownership should be tracked in private project management channels.
 | `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_firmware`; forked/vendor code must preserve upstream names and licenses. |
 | `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_train`; RPO-specific training assets should move under explicit product paths over time. |
 | `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Snapshot path added at `modules/roboparty_navigation`; default branch is `master`. |
-| `Atom_xr_teleop` | `roboparty_xr_teleop` | Planned, top-level path updated | Snapshot path migrated to `modules/roboparty_xr_teleop`. Public repo rename still needs to be completed before this link becomes live. |
+| `Atom_xr_teleop` | `roboparty_xr_teleop` | Done, needs confirmation | GitHub repo renamed. Snapshot path migrated to `modules/roboparty_xr_teleop`; internal package/path migration status needs confirmation. |
 
 ## Migration Phases
 
