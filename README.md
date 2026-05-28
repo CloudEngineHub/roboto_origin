@@ -1,6 +1,6 @@
-# Atom XR 遥操作
+# Roboparty XR Teleop
 
-基于 [Unitree xr_teleoperate](https://github.com/unitreerobotics/xr_teleoperate) 修改，面向 Atom 机器人与 PICO VR 的双臂遥操作。
+基于 [Unitree xr_teleoperate](https://github.com/unitreerobotics/xr_teleoperate) 修改，面向 RPO/Roboto 机器人与 PICO VR 的双臂遥操作。
 
 ## 环境要求
 
@@ -8,7 +8,7 @@
 - Python 3.10
 - ROS2 Python 环境
 - PICO VR 设备
-- Atom 机器人控制链路
+- RPO/Roboto 机器人控制链路
 
 ## 安装
 
@@ -17,8 +17,8 @@
 推荐先创建独立环境：
 
 ```bash
-conda create -n atom_xr python=3.10 -y
-conda activate atom_xr
+conda create -n roboparty_xr python=3.10 -y
+conda activate roboparty_xr
 ```
 
 ### 2. 安装 IK 依赖
@@ -81,9 +81,9 @@ sudo ufw allow 8012
 
 ## 机器人侧平衡 Policy
 
-本项目负责 `VR -> 上半身遥操作` 控制链路。真机运行时，人形机器人本体仍需要底层 `policy` 负责站立与平衡控制，因此通常需要配合 [`atom01_deploy`](https://github.com/Roboparty/atom01_deploy) 一起使用。
+本项目负责 `VR -> 上半身遥操作` 控制链路。真机运行时，人形机器人本体仍需要底层 `policy` 负责站立与平衡控制，因此通常需要配合 [`roboparty_deploy`](https://github.com/Roboparty/roboparty_deploy) 一起使用。
 
-如果需要切换机器人底层策略模型，请先修改 `atom01_deploy` 中的 `src/inference/launch/inference.launch.py`，把加载的配置文件改成目标 policy：
+如果需要切换机器人底层策略模型，请先修改 `roboparty_deploy` 中的 `src/inference/launch/inference.launch.py`，把加载的配置文件改成目标 policy：
 
 ```python
 configs = [
@@ -109,7 +109,7 @@ configs = [
 
 修改完成后，重新运行 `./tools/start_robot.sh`，机器人启动时就会加载对应配置，并使用相应的底层 policy。
 
-详细说明请参考 [`atom01_deploy` 的 README_CN](https://github.com/Roboparty/atom01_deploy/blob/main/README_CN.md)。
+详细说明请参考 [`roboparty_deploy` 的 README_CN](https://github.com/Roboparty/roboparty_deploy/blob/main/README_CN.md)。
 
 机器人侧遥控器按键操作也请参考该文档。结合本项目，主要会用到下面几个按键：
 
@@ -120,7 +120,7 @@ configs = [
 
 推荐的真机联调流程如下：
 
-1. 在机器人侧启动 `atom01_deploy`，并确认已经加载 `inference_interrupt.yaml`
+1. 在机器人侧启动 `roboparty_deploy`，并确认已经加载 `inference_interrupt.yaml`
 2. 使用机器人遥控器按 `X` 使能电机，按 `A` 让机器人复位
 3. 按遥控器 `B` 进入推理模式，确认机器人已经能够稳定站立、保持平衡并正常行走
 4. 在本仓库中启动 VR 遥操作程序，并按照下文流程完成 PICO 连接，使仿真机器人开始跟随操作者动作
@@ -138,7 +138,7 @@ configs = [
 在仓库根目录执行：
 
 ```bash
-python teleop/xr_Control_Atom.py --xr-mode controller
+python teleop/xr_control_rpo.py --xr-mode controller
 ```
 
 常用参数：
@@ -151,7 +151,7 @@ python teleop/xr_Control_Atom.py --xr-mode controller
 如果你想在真机前先做性能检查，推荐先使用：
 
 ```bash
-python teleop/xr_Control_Atom.py --xr-mode controller --headless --profile-loop
+python teleop/xr_control_rpo.py --xr-mode controller --headless --profile-loop
 ```
 
 终端会打印类似下面的统计信息：
@@ -182,7 +182,7 @@ Loop timing avg over N iters: motion=... ms, ik=... ms, send=... ms, loop=... ms
 ### 1. 启动控制程序
 
 ```bash
-python teleop/xr_Control_Atom.py --xr-mode controller
+python teleop/xr_control_rpo.py --xr-mode controller
 ```
 
 程序启动后会等待开始信号，同时浏览器会弹出 Meshcat 仿真界面。
@@ -216,7 +216,7 @@ https://192.168.123.2:8012/?ws=wss://192.168.123.2:8012
 推荐真机使用下面这条命令启动：
 
 ```bash
-python teleop/xr_Control_Atom.py --xr-mode controller --headless
+python teleop/xr_control_rpo.py --xr-mode controller --headless
 ```
 
 终端键位：
@@ -247,15 +247,16 @@ VR 控制器键位：
 ## 目录结构
 
 ```text
-RPO_teleoperate/
+roboparty_xr_teleop/
 ├── assets/
-│   └── Atom01_urdf/
+│   └── Atom01_urdf/  # compatibility asset path
 ├── teleop/
 │   ├── robot_control/
 │   │   └── robot_arm_ik.py
 │   ├── utils/
 │   │   └── weighted_moving_filter.py
-│   └── xr_Control_Atom.py
+│   ├── xr_control_rpo.py
+│   └── xr_Control_Atom.py  # compatibility entrypoint
 ├── televuer/
 ├── LICENSE
 ├── README.md

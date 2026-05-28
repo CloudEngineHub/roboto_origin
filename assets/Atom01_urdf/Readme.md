@@ -1,2 +1,1 @@
-This is the URDF file of Atom01, a product of Roboparty.
-![Atom01 URDF 模型](https://github.com/Roboparty/Atom01_urdf/blob/main/atom01_urdf.png)  
+This directory contains RPO/Roboto URDF assets inherited from the historical Atom01 model path. The directory and file names are kept for compatibility with existing scripts and model references.
