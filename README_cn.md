@@ -51,12 +51,14 @@
 
 | 子仓库                                                                    | 贡献方向                                           |
 | ------------------------------------------------------------------------- | -------------------------------------------------- |
-| **[Atom01_hardware](https://github.com/Roboparty/Atom01_hardware)**       | 机械结构设计、CAD图纸、PCB设计、BOM改进            |
-| **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)**           | ROS2驱动开发、中间件模块、部署配置、IMU/电机集成   |
-| **[atom01_train](https://github.com/Roboparty/atom01_train)**             | 强化学习算法、训练环境、仿真配置、Sim2Sim迁移      |
-| **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF运动学/动力学描述、视觉/碰撞网格、关节参数优化 |
-| **[atom01_firmware](https://github.com/Roboparty/atom01_firmware)**       | 固件开发、嵌入式软件、USB2CAN、OrangePi构建系统、系统守护进程管理 |
-| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | 外观件设计、外壳结构、视觉参考、表面处理与装配说明，仅供静态展示，不建议打印 |
+| **[rpo_hardware](https://github.com/Roboparty/rpo_hardware)**             | RPO 机械结构设计、CAD图纸、PCB设计、BOM改进        |
+| **[roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)**     | ROS2驱动开发、中间件模块、部署配置、IMU/电机集成   |
+| **[roboparty_train](https://github.com/Roboparty/roboparty_train)**       | 强化学习算法、训练环境、仿真配置、Sim2Sim迁移      |
+| **[rpo_description](https://github.com/Roboparty/rpo_description)**       | RPO URDF/MJCF运动学/动力学描述、视觉/碰撞网格      |
+| **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | 固件开发、嵌入式软件、USB2CAN、OrangePi/RDK构建工具、系统守护进程管理 |
+| **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | RPO 外观件设计、外壳结构、视觉参考、表面处理与装配说明，仅供静态展示，不建议打印 |
+
+**兼容说明：** 命名迁移期间，快照目录 `modules/...` 下的部分路径仍保留历史 Atom01/atom01 目录名。
 
 **详细贡献指南请点击这里：** [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)
 
@@ -81,12 +83,12 @@
 
 | 模块名称               | 介绍                                                                                              | 仓库链接                                        |
 | ---------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Atom01_hardware**    | Atom01机器人的硬件设计文件，包含结构图纸和设计资料                                                | https://github.com/Roboparty/Atom01_hardware    |
-| **atom01_deploy**      | ROS2部署框架，提供模块化架构的中间件，用于机器人部署和控制，支持IMU、电机驱动、推理等功能         | https://github.com/Roboparty/atom01_deploy      |
-| **atom01_train**       | 基于IsaacLab的直接训练工作流，提供高透明度和低重构难度的强化学习训练环境，支持Sim2Sim迁移到MuJoCo | https://github.com/Roboparty/atom01_train       |
-| **atom01_description** | Atom01机器人的URDF模型文件，包含机器人运动学和动力学描述，用于仿真和可视化                        | https://github.com/Roboparty/atom01_description |
-| **atom01_firmware**    | Atom01机器人的固件模块，提供嵌入式软件支持，包括USB2CAN、OrangePi构建系统和系统守护进程管理         | https://github.com/Roboparty/atom01_firmware    |
-| **atom01_appearance**  | Atom01机器人的外观设计文件，包含外观件、外壳设计资料和原型机外观说明，仅供静态展示，不建议打印                              | https://github.com/Roboparty/atom01_appearance  |
+| **rpo_hardware**        | RPO 机器人的硬件设计文件，包含结构图纸和设计资料                                                  | https://github.com/Roboparty/rpo_hardware       |
+| **roboparty_deploy**    | ROS2部署框架，提供模块化架构的中间件，用于机器人部署和控制，支持IMU、电机驱动、推理等功能         | https://github.com/Roboparty/roboparty_deploy   |
+| **roboparty_train**     | 基于IsaacLab的直接训练工作流，提供高透明度和低重构难度的强化学习训练环境，支持Sim2Sim迁移到MuJoCo | https://github.com/Roboparty/roboparty_train    |
+| **rpo_description**     | RPO 机器人的URDF/MJCF模型文件，包含机器人运动学和动力学描述，用于仿真和可视化                    | https://github.com/Roboparty/rpo_description    |
+| **roboparty_firmware**  | 固件模块，提供嵌入式软件支持，包括USB2CAN、OrangePi/RDK构建工具和系统守护进程管理                 | https://github.com/Roboparty/roboparty_firmware |
+| **rpo_appearance**      | RPO 机器人的外观设计文件，包含外观件、外壳设计资料和原型机外观说明，仅供静态展示，不建议打印      | https://github.com/Roboparty/rpo_appearance     |
 
 ---
 
