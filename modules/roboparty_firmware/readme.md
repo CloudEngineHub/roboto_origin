@@ -1,6 +1,6 @@
-# roboparty_firmware - ROBOTO_ORIGIN Firmware Module
+# roboparty_firmware
 
-Firmware and build systems for the ROBOTO_ORIGIN humanoid robot.
+Firmware and board image build systems for Roboparty robots, including RPO/Roboto platforms.
 
 ## Overview
 
@@ -50,3 +50,9 @@ This project is licensed under the GNU General Public License Version 3 (GPLv3).
 ## Contributing
 
 See the main [roboto_origin](https://github.com/Roboparty/roboto_origin) repository for contribution guidelines.
+
+## Notes
+
+Some vendored build systems and firmware components may keep their upstream names,
+licenses, and directory layout. Those compatibility paths should not be renamed
+unless the corresponding build scripts are updated and validated.
