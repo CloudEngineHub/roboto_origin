@@ -28,6 +28,8 @@ Review the module descriptions below to determine which sub-repository your cont
 | **[rpo_description](https://github.com/Roboparty/rpo_description)**       | URDF robot models          | Kinematic/dynamic descriptions, visual/collision meshes, joint parameters                |
 | **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | Firmware module            | Embedded software, USB2CAN, OrangePi/RDK build tooling, system daemon management         |
 | **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | Appearance design files    | Exterior shell design, appearance structure, visual references, surface and assembly notes |
+| **[roboparty_navigation](https://github.com/Roboparty/roboparty_navigation)** | Navigation application | Navigation, localization, and related ROS2 application modules                           |
+| **[roboparty_xr_teleop](https://github.com/Roboparty/roboparty_xr_teleop)** | XR teleoperation application | XR teleoperation UI, streaming, and robot control integration                          |
 
 ### 2. Fork and Clone the Target Sub-Repository
 

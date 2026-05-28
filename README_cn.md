@@ -57,8 +57,10 @@
 | **[rpo_description](https://github.com/Roboparty/rpo_description)**       | RPO URDF/MJCF运动学/动力学描述、视觉/碰撞网格      |
 | **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | 固件开发、嵌入式软件、USB2CAN、OrangePi/RDK构建工具、系统守护进程管理 |
 | **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | RPO 外观件设计、外壳结构、视觉参考、表面处理与装配说明，仅供静态展示，不建议打印 |
+| **[roboparty_navigation](https://github.com/Roboparty/roboparty_navigation)** | RPO 实验相关导航与定位应用模块 |
+| **[roboparty_xr_teleop](https://github.com/Roboparty/roboparty_xr_teleop)** | RPO 实验相关 XR 遥操作应用。 |
 
-**兼容说明：** 快照目录 `modules/...` 已使用公开仓库名。部分内部包名、文件名和兼容路径仍可能保留历史 Atom01/atom01 名称。
+**兼容说明：** 快照目录 `modules/...` 使用目标公开仓库名。部分内部包名、文件名和兼容路径仍可能保留历史 Atom01/atom01 名称。
 
 **详细贡献指南请点击这里：** [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)
 
@@ -89,6 +91,8 @@
 | **rpo_description**     | RPO 机器人的URDF/MJCF模型文件，包含机器人运动学和动力学描述，用于仿真和可视化                    | https://github.com/Roboparty/rpo_description    |
 | **roboparty_firmware**  | 固件模块，提供嵌入式软件支持，包括USB2CAN、OrangePi/RDK构建工具和系统守护进程管理                 | https://github.com/Roboparty/roboparty_firmware |
 | **rpo_appearance**      | RPO 机器人的外观设计文件，包含外观件、外壳设计资料和原型机外观说明，仅供静态展示，不建议打印      | https://github.com/Roboparty/rpo_appearance     |
+| **roboparty_navigation** | RPO 实验相关导航与定位应用模块                                                                  | https://github.com/Roboparty/roboparty_navigation |
+| **roboparty_xr_teleop** | RPO 实验相关 XR 遥操作应用。                                                                   | https://github.com/Roboparty/roboparty_xr_teleop |
 
 ---
 

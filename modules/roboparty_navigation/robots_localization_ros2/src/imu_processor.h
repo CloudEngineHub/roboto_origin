@@ -1,0 +1,99 @@
+#pragma once
+
+#include <common_lib.h>
+#include <pcl/common/transforms.h>
+#include <time.h>
+
+#include <chrono>
+#include <fstream>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sophus/so3.hpp>
+
+#include "ikd-Tree/ikd_Tree.h"
+#include "scan_aligner.h"
+#include "use-ikfom.h"
+
+#define MAX_INI_COUNT (10)
+
+using namespace common_lib;
+using namespace ikd_Tree;
+
+const bool time_list(PointType &x, PointType &y);
+
+class IMUProcessor
+{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    IMUProcessor();
+
+    ~IMUProcessor();
+
+    void reset();
+
+    void set_init_pose(const V3F &poseT, const M3F &poseR);
+
+    void set_extrinsic(const V3D &transl, const M3D &rot);
+
+    void set_extrinsic(const V3D &transl);
+
+    void set_extrinsic(const MD(4, 4) & T);
+
+    void set_gyr_cov(const V3D &scaler);
+
+    void set_acc_cov(const V3D &scaler);
+
+    void set_gyr_bias_cov(const V3D &b_g);
+
+    void set_acc_bias_cov(const V3D &b_a);
+
+    void imu_init(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, int &N);
+
+    bool init_pose(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state,
+                   PointCloudXYZI::Ptr map, KD_TREE<PointType> &kdtree, vector<float> &YAW_RANGE);
+
+    void process(MeasureGroup &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudXYZI &pcl_out);
+
+    bool process_imu_only(const sensor_msgs::msg::Imu::SharedPtr imu_data,
+                          esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state);
+
+    Eigen::Matrix<double, 12, 12> Q;
+    V3D cov_acc;
+    V3D cov_gyr;
+    V3D cov_acc_scale;
+    V3D cov_gyr_scale;
+    V3D cov_bias_gyr;
+    V3D cov_bias_acc;
+
+    double first_lidar_time;
+
+    string method;
+    bool estimateGrav = true;
+    bool mapping_en = false;
+
+    string timeStr;
+
+    bool imu_need_init_;
+    int init_iter_num;
+
+    M3F gravR;
+
+  private:
+   sensor_msgs::msg::Imu::ConstSharedPtr last_imu_, last_imu_only_;
+   vector<Pose6D> IMUpose;
+   V3D acc_s_last, angvel_last;
+   double last_lidar_end_time_;
+
+   M3D Lidar_R_wrt_IMU;
+   V3D Lidar_T_wrt_IMU;
+
+   bool find_yaw;
+   M4F lidar_pose_last;
+   M4F init_pose_curr;
+   M4F init_pose_last;
+   bool b_first_frame_;
+   V3D mean_acc;
+   V3D mean_gyr;
+
+   std::ofstream fout_init;
+};
