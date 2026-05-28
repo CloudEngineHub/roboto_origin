@@ -1,4 +1,4 @@
-# 硬件文件已迁移到 modules/Atom01_hardware
+# 硬件文件已迁移到 modules/rpo_hardware
 atom01_mechnaic/
 atom01_pcb/
 .scripts

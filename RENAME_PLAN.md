@@ -11,7 +11,7 @@ The top-level aggregation repository remains `roboto_origin`.
 - Product-specific repositories use `rpo_*`.
 - Shared framework repositories use `roboparty_*`.
 - Forked or vendored upstream projects keep upstream names and license notices.
-- Top-level `modules/...` paths are not renamed in the first phase.
+- Top-level `modules/...` snapshot paths have been migrated to public repository names.
 - `.scripts/` remains a local operations directory and is not tracked by git.
 - All future top-level changes must go through `dev -> PR -> main`.
 
@@ -30,12 +30,12 @@ ownership should be tracked in private project management channels.
 
 | Old repository | New repository | Status | Notes |
 | --- | --- | --- | --- |
-| `Atom01_hardware` | `rpo_hardware` | Done | GitHub repo renamed. Snapshot path is retained for compatibility. |
-| `atom01_appearance` | `rpo_appearance` | Done | GitHub repo renamed. README migrated to RPO wording. STL filenames kept for compatibility. |
-| `atom01_description` | `rpo_description` | Done, needs confirmation | GitHub repo rename observed. Internal model/path migration status needs confirmation. |
-| `atom01_deploy` | `roboparty_deploy` | Done, needs confirmation | GitHub repo rename observed. RPO-specific configs should remain documented as the current default. |
-| `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Forked/vendor code must preserve upstream names and licenses. |
-| `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. RPO-specific training assets should move under explicit product paths over time. |
+| `Atom01_hardware` | `rpo_hardware` | Done | GitHub repo renamed. Snapshot path migrated to `modules/rpo_hardware`. |
+| `atom01_appearance` | `rpo_appearance` | Done | GitHub repo renamed. Snapshot path migrated to `modules/rpo_appearance`; STL filenames kept for compatibility. |
+| `atom01_description` | `rpo_description` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/rpo_description`; internal model/path migration status needs confirmation. |
+| `atom01_deploy` | `roboparty_deploy` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_deploy`; RPO-specific configs should remain documented as the current default. |
+| `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_firmware`; forked/vendor code must preserve upstream names and licenses. |
+| `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_train`; RPO-specific training assets should move under explicit product paths over time. |
 | `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Default branch is `master`. |
 | `Atom_xr_teleop` | TBD | Deferred | Not part of the current migration batch. |
 
@@ -68,11 +68,12 @@ Local operations changes are kept outside git:
 - Keep any local sync notes under `.scripts/logs/` if needed.
 - Do not reference untracked `.scripts/` changes as reviewed PR content.
 
-### Phase 3: Internal Path Migration
+### Phase 3: Internal Package And Runtime Migration
 
 This phase is optional and must be handled with separate PRs:
 
-- Rename `modules/atom01_*` paths only after repository renames are stable.
+- Keep top-level `modules/...` snapshot paths aligned with public repository names.
+- Migrate internal package names, scripts, model files, ROS package names, and runtime paths only after each sub-repository owner confirms the compatibility plan.
 - Provide compatibility aliases or clear migration notes when paths, scripts, model files, or ROS package names change.
 - Validate at least the minimal documented build or usage path for each affected repository.
 

@@ -58,7 +58,7 @@
 | **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | 固件开发、嵌入式软件、USB2CAN、OrangePi/RDK构建工具、系统守护进程管理 |
 | **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | RPO 外观件设计、外壳结构、视觉参考、表面处理与装配说明，仅供静态展示，不建议打印 |
 
-**兼容说明：** 命名迁移期间，快照目录 `modules/...` 下的部分路径仍保留历史 Atom01/atom01 目录名。
+**兼容说明：** 快照目录 `modules/...` 已使用公开仓库名。部分内部包名、文件名和兼容路径仍可能保留历史 Atom01/atom01 名称。
 
 **详细贡献指南请点击这里：** [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)
 

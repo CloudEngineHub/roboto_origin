@@ -22,11 +22,12 @@
 
 | 子仓库                                                                    | 用途               | 贡献内容                                      |
 | ------------------------------------------------------------------------- | ------------------ | --------------------------------------------- |
-| **[Atom01_hardware](https://github.com/Roboparty/Atom01_hardware)**       | 硬件设计文件       | 机械结构、CAD图纸、PCB设计、BOM改进           |
-| **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)**           | ROS2部署框架       | 驱动开发、中间件模块、部署配置、IMU/电机集成  |
-| **[atom01_train](https://github.com/Roboparty/atom01_train)**             | IsaacLab训练工作流 | 强化学习算法、训练环境、仿真配置、Sim2Sim迁移 |
-| **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF机器人模型     | 运动学/动力学描述、视觉/碰撞网格、关节参数    |
-| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | 外观件设计文件     | 外壳造型、外观结构、视觉参考、表面处理与装配说明 |
+| **[rpo_hardware](https://github.com/Roboparty/rpo_hardware)**             | 硬件设计文件       | 机械结构、CAD图纸、PCB设计、BOM改进           |
+| **[roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)**     | ROS2部署框架       | 驱动开发、中间件模块、部署配置、IMU/电机集成  |
+| **[roboparty_train](https://github.com/Roboparty/roboparty_train)**       | IsaacLab训练工作流 | 强化学习算法、训练环境、仿真配置、Sim2Sim迁移 |
+| **[rpo_description](https://github.com/Roboparty/rpo_description)**       | URDF机器人模型     | 运动学/动力学描述、视觉/碰撞网格、关节参数    |
+| **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | 固件模块           | 嵌入式软件、USB2CAN、OrangePi/RDK构建工具、系统守护进程管理 |
+| **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | 外观件设计文件     | 外壳造型、外观结构、视觉参考、表面处理与装配说明 |
 
 ### 2. Fork 并克隆目标子仓库
 
@@ -123,7 +124,7 @@ git push origin feature/your-feature-name
 ## 获取帮助
 
 - **QQ群：** 1078670917
-- **邮箱：** zhangbaoxin@roboparty.com
+- **邮箱：** tech@roboparty.com
 - **GitHub Issues：** 在相应的子仓库中提问
 
 ## 致谢
