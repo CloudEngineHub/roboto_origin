@@ -38,8 +38,10 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 | **[rpo_description](https://github.com/Roboparty/rpo_description)**       | RPO URDF/MJCF kinematic and dynamic descriptions, visual/collision meshes                 |
 | **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | Firmware development, embedded software, USB2CAN, OrangePi/RDK build tooling              |
 | **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | RPO exterior shell design assets and prototype enclosure documentation. Static Display Only; Printing Not Recommended |
+| **[roboparty_navigation](https://github.com/Roboparty/roboparty_navigation)** | Navigation and localization application modules for RPO experiments                    |
+| **[Atom_xr_teleop](https://github.com/Roboparty/Atom_xr_teleop)**         | XR teleoperation application. Current repository name is retained until the XR naming migration is decided. |
 
-**Compatibility note:** Snapshot directories under `modules/...` now use the public repository names. Some internal package names, filenames, and compatibility paths may still contain historical Atom01/atom01 names.
+**Compatibility note:** Snapshot directories under `modules/...` use the current public repository names. `Atom_xr_teleop` still keeps its historical public name until the XR naming migration is decided. Some internal package names, filenames, and compatibility paths may still contain historical Atom01/atom01 names.
 
 **For detailed contribution guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
@@ -68,6 +70,8 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 | **rpo_description**     | RPO URDF/MJCF model files containing kinematic and dynamic descriptions for simulation and visualization                                                 | https://github.com/Roboparty/rpo_description    |
 | **roboparty_firmware**  | Firmware module providing embedded software support including USB2CAN, OrangePi/RDK build tooling, and system daemon management                           | https://github.com/Roboparty/roboparty_firmware |
 | **rpo_appearance**      | RPO appearance design files, including exterior shell design assets and prototype enclosure documentation. Static Display Only; Printing Not Recommended  | https://github.com/Roboparty/rpo_appearance     |
+| **roboparty_navigation** | Navigation and localization application modules for RPO experiments                                                                                      | https://github.com/Roboparty/roboparty_navigation |
+| **Atom_xr_teleop**      | XR teleoperation application. Current repository name is retained until the XR naming migration is decided.                                               | https://github.com/Roboparty/Atom_xr_teleop     |
 
 ---
 

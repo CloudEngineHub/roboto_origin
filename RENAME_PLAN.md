@@ -11,7 +11,7 @@ The top-level aggregation repository remains `roboto_origin`.
 - Product-specific repositories use `rpo_*`.
 - Shared framework repositories use `roboparty_*`.
 - Forked or vendored upstream projects keep upstream names and license notices.
-- Top-level `modules/...` snapshot paths have been migrated to public repository names.
+- Top-level `modules/...` snapshot paths use current public repository names.
 - `.scripts/` remains a local operations directory and is not tracked by git.
 - All future top-level changes must go through `dev -> PR -> main`.
 
@@ -36,8 +36,8 @@ ownership should be tracked in private project management channels.
 | `atom01_deploy` | `roboparty_deploy` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_deploy`; RPO-specific configs should remain documented as the current default. |
 | `atom01_firmware` | `roboparty_firmware` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_firmware`; forked/vendor code must preserve upstream names and licenses. |
 | `atom01_train` | `roboparty_train` | Done, needs confirmation | GitHub repo rename observed. Snapshot path migrated to `modules/roboparty_train`; RPO-specific training assets should move under explicit product paths over time. |
-| `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Default branch is `master`. |
-| `Atom_xr_teleop` | TBD | Deferred | Not part of the current migration batch. |
+| `atom01_navigation` | `roboparty_navigation` | Done, needs confirmation | GitHub repo rename observed. Snapshot path added at `modules/roboparty_navigation`; default branch is `master`. |
+| `Atom_xr_teleop` | TBD | Included, rename deferred | Snapshot path added at `modules/Atom_xr_teleop`. Public repo still uses the historical name; choose the target name before renaming. |
 
 ## Migration Phases
 
