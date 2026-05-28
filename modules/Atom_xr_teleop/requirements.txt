@@ -1,0 +1,7 @@
+numpy<2.0.0
+logging-mp
+opencv-python
+params-proto<3
+vuer[all]==0.0.60
+meshcat==0.3.2
+sshkeyboard==2.3.1
