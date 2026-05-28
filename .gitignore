@@ -1,0 +1,16 @@
+#environment
+.vscode
+bin
+build
+lib
+/data/video/
+/data/pic/
+/old_data/pic/
+/corefile
+/install
+temp
+cmake-build-debug
+.idea
+log
+*.deb
+roboto-imu_*/
