@@ -22,11 +22,12 @@ Review the module descriptions below to determine which sub-repository your cont
 
 | Sub-Repository                                                            | Purpose                    | Contribution Topics                                                                      |
 | ------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------- |
-| **[Atom01_hardware](https://github.com/Roboparty/Atom01_hardware)**       | Hardware design files      | Mechanical structures, CAD drawings, PCB designs, BOM improvements                       |
-| **[atom01_deploy](https://github.com/Roboparty/atom01_deploy)**           | ROS2 deployment framework  | Driver development, middleware modules, deployment configurations, IMU/motor integration |
-| **[atom01_train](https://github.com/Roboparty/atom01_train)**             | IsaacLab training workflow | RL algorithms, training environments, simulation configs, Sim2Sim transfer               |
-| **[atom01_description](https://github.com/Roboparty/atom01_description)** | URDF robot models          | Kinematic/dynamic descriptions, visual/collision meshes, joint parameters                |
-| **[atom01_appearance](https://github.com/Roboparty/atom01_appearance)**   | Appearance design files    | Exterior shell design, appearance structure, visual references, surface and assembly notes |
+| **[rpo_hardware](https://github.com/Roboparty/rpo_hardware)**             | Hardware design files      | Mechanical structures, CAD drawings, PCB designs, BOM improvements                       |
+| **[roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)**     | ROS2 deployment framework  | Driver development, middleware modules, deployment configurations, IMU/motor integration |
+| **[roboparty_train](https://github.com/Roboparty/roboparty_train)**       | IsaacLab training workflow | RL algorithms, training environments, simulation configs, Sim2Sim transfer               |
+| **[rpo_description](https://github.com/Roboparty/rpo_description)**       | URDF robot models          | Kinematic/dynamic descriptions, visual/collision meshes, joint parameters                |
+| **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | Firmware module            | Embedded software, USB2CAN, OrangePi/RDK build tooling, system daemon management         |
+| **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | Appearance design files    | Exterior shell design, appearance structure, visual references, surface and assembly notes |
 
 ### 2. Fork and Clone the Target Sub-Repository
 
@@ -123,7 +124,7 @@ For detailed community guidelines, please refer to our [Code of Conduct](CODE_OF
 ## Getting Help
 
 - **QQ Group:** 1078670917
-- **Email:** zhangbaoxin@roboparty.com
+- **Email:** tech@roboparty.com
 - **GitHub Issues:** Post in the appropriate sub-repository
 
 ## Recognition

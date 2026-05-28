@@ -39,7 +39,7 @@ If you wish to contribute to the project, please select the appropriate sub-repo
 | **[roboparty_firmware](https://github.com/Roboparty/roboparty_firmware)** | Firmware development, embedded software, USB2CAN, OrangePi/RDK build tooling              |
 | **[rpo_appearance](https://github.com/Roboparty/rpo_appearance)**         | RPO exterior shell design assets and prototype enclosure documentation. Static Display Only; Printing Not Recommended |
 
-**Compatibility note:** Some snapshot paths under `modules/...` still use the historical Atom01/atom01 directory names during the naming transition.
+**Compatibility note:** Snapshot directories under `modules/...` now use the public repository names. Some internal package names, filenames, and compatibility paths may still contain historical Atom01/atom01 names.
 
 **For detailed contribution guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
