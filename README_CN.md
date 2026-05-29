@@ -1,4 +1,4 @@
-# RoboParty ROS2 Deploy
+# roboparty_deploy
 
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-silver)](https://docs.ros.org/en/humble/index.html)
 ![C++](https://img.shields.io/badge/C++-17-blue)
@@ -9,12 +9,12 @@
 
 ## 概述
 
-本仓库提供了使用 ROS2 作为中间件的部署框架，并具有模块化架构，便于无缝定制和扩展。
+`roboparty_deploy` 是 Roboparty 面向 RPO/Roboto 机器人的 ROS2 部署框架。它采用模块化架构，便于硬件驱动、推理、主控工具和用户脚本独立维护与扩展。
 
 开源地址：[https://github.com/Roboparty/roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)
 
-**维护者**: 刘志浩
-**联系方式**: <ZhihaoLiu_hit@163.com>
+**维护者**: RoboParty
+**支持渠道**: GitHub Issues
 
 **主要特性:**
 
@@ -56,7 +56,7 @@
 5. 接着拉取部署代码：
 
    ```bash
-   git clone https://github.com/Roboparty/roboparty_deploy.git
+   git clone --recursive https://github.com/Roboparty/roboparty_deploy.git
    cd roboparty_deploy
    git submodule update --init --recursive
    ```

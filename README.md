@@ -1,4 +1,4 @@
-# RoboParty ROS2 Deploy
+# roboparty_deploy
 
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-silver)](https://docs.ros.org/en/humble/index.html)
 ![C++](https://img.shields.io/badge/C++-17-blue)
@@ -9,12 +9,12 @@
 
 ## Overview
 
-This repository provides a deployment framework using ROS2 as middleware with a modular architecture for seamless customization and extension.
+`roboparty_deploy` provides the ROS2 deployment framework for Roboparty RPO/Roboto robots. It uses a modular architecture so hardware drivers, inference, controller tools, and user-facing scripts can be maintained and extended independently.
 
 Open-source repository: [https://github.com/Roboparty/roboparty_deploy](https://github.com/Roboparty/roboparty_deploy)
 
-**Maintainer**: Zhihao Liu
-**Contact**: <ZhihaoLiu_hit@163.com>
+**Maintainer**: RoboParty
+**Support**: GitHub Issues
 
 **Key Features:**
 
@@ -56,7 +56,7 @@ For controller connection methods and related resources, see [Orange Pi 5 Plus W
 5. Next, clone the deployment code:
 
    ```bash
-   git clone https://github.com/Roboparty/roboparty_deploy.git
+   git clone --recursive https://github.com/Roboparty/roboparty_deploy.git
    cd roboparty_deploy
    git submodule update --init --recursive
    ```
