@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Module-level bug, feature, or PR target
+    url: https://github.com/Roboparty/roboto_origin/blob/main/CONTRIBUTING.md#1-identify-the-correct-sub-repository
+    about: roboto_origin is a snapshot repository. Please file module-level issues and PRs in the corresponding sub-repository.
+  - name: Community support
+    url: https://github.com/Roboparty/roboto_origin#community
+    about: For usage questions and open discussion, use the community channel listed in the README.

@@ -1,0 +1,66 @@
+name: roboto_origin aggregation issue
+description: Use this only for snapshot sync, repository docs, broken links, license/community metadata, or aggregation packaging issues.
+title: "[aggregation]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve roboto_origin.
+
+        This repository is a daily-updated snapshot aggregation of the project sub-repositories. Module-level bugs, feature requests, and code changes should be filed in the relevant sub-repository instead of here.
+
+        Common targets:
+        - rpo_hardware: https://github.com/Roboparty/rpo_hardware
+        - roboparty_deploy: https://github.com/Roboparty/roboparty_deploy
+        - roboparty_train: https://github.com/Roboparty/roboparty_train
+        - rpo_description: https://github.com/Roboparty/rpo_description
+        - roboparty_firmware: https://github.com/Roboparty/roboparty_firmware
+        - rpo_appearance: https://github.com/Roboparty/rpo_appearance
+        - roboparty_navigation: https://github.com/Roboparty/roboparty_navigation
+        - roboparty_xr_teleop: https://github.com/Roboparty/roboparty_xr_teleop
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      description: Select the aggregation-layer area this issue belongs to.
+      options:
+        - Snapshot sync failure
+        - Missing or outdated module snapshot
+        - Root README / documentation / link issue
+        - License, community, or repository metadata issue
+        - Other aggregation-layer issue
+    validations:
+      required: true
+  - type: input
+    id: affected_path
+    attributes:
+      label: Affected path or module
+      description: For example, README.md, modules/roboparty_deploy, .github/ISSUE_TEMPLATE, or sync_subtrees.sh.
+      placeholder: README.md
+    validations:
+      required: false
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the aggregation issue. Include links, commit hashes, or logs when available.
+      placeholder: What is wrong in the snapshot repository?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What should the snapshot repository show or do instead?
+      placeholder: What should be corrected?
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope_check
+    attributes:
+      label: Scope check
+      options:
+        - label: I confirm this is about the roboto_origin aggregation layer, not a module-level code, hardware, model, training, deployment, firmware, navigation, or XR teleop issue.
+          required: true
+        - label: If this relates to a module snapshot, I checked the corresponding source sub-repository first.
+          required: true

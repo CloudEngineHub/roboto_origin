@@ -10,7 +10,7 @@
 
 ## About Us
 
-We are **RoboParty**, founded on February 21, 2025. We started developing humanoid robots in April and completed the prototype **ROBOTO_ORIGIN** in just four months. We have always upheld the philosophy of open source. ROBOTO_ORIGIN's entire R&D process, including all structures, electronics, training, and deployment, has been open-sourced.
+We are **RoboParty**, Shanghai RoboParty Technology Co., Ltd., founded on February 21, 2025. We started developing humanoid robots in April and completed the prototype **ROBOTO_ORIGIN** in just four months. We have always upheld the philosophy of open source. ROBOTO_ORIGIN's entire R&D process, including all structures, electronics, training, and deployment, has been open-sourced.
 
 As we advance the development of new robots, we realize that a high-performance robot cannot be achieved through DIY alone. Therefore, we have decided to officially open-source this running and jumping prototype to document our journey.
 
@@ -24,9 +24,30 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 **[Humanoid Robot Know-How Documentation](https://roboparty.com/roboto_origin/doc)** - Complete R&D process documentation for the prototype robot
 
-### Contributing
+---
 
-**Important:** The `roboto_origin` repository serves as a snapshot aggregation only. All issue reporting and code contributions should be made to the individual sub-repositories.
+## Community
+
+**QQ Group:** 1078670917
+
+<table>
+  <tr>
+    <td><img src="assets/qqqrcode.jpg" alt="QQ Group QR Code" width="200"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>QQ Group</b></td>
+  </tr>
+</table>
+
+---
+
+## About This Repository
+
+This repository is a daily-updated snapshot aggregation of the core sub-repositories for the ROBOTO_ORIGIN prototype, so users can pull all resources from one place.
+
+**Important:** The `roboto_origin` repository serves as a snapshot aggregation only. Module-level issue reporting and code contributions should be made to the individual sub-repositories. Use this repository's Issues and Pull Requests only for aggregation-layer work such as snapshot sync problems, root documentation, links, repository metadata, or sync workflow fixes.
+
+### Contributing
 
 If you wish to contribute to the project, please select the appropriate sub-repository based on your contribution:
 

@@ -10,8 +10,9 @@ This repository serves as a daily-updated aggregation snapshot of all sub-reposi
 
 ### What This Means for Contributors
 
-- **DO NOT** submit pull requests or issues to `roboto_origin`
-- **DO** submit contributions to the specific sub-repository where your changes belong
+- **DO NOT** submit module-level pull requests or issues to `roboto_origin`
+- **DO** submit module-level contributions to the specific sub-repository where your changes belong
+- **DO** use `roboto_origin` Issues and Pull Requests only for aggregation-layer maintenance, such as snapshot sync problems, root documentation, links, repository metadata, or sync workflow fixes
 - The main repository will automatically update its snapshot from sub-repositories
 
 ## How to Contribute
@@ -82,6 +83,16 @@ Then open a pull request on the sub-repository's GitHub page.
 
 ### Issue Reporting
 
+Use `roboto_origin` Issues only for aggregation-layer problems:
+
+- snapshot sync failures
+- missing or outdated module snapshots
+- root README, documentation, or link issues
+- license, community, or repository metadata issues
+- sync script and aggregation workflow problems
+
+For module-level bugs or feature requests, report them in the corresponding sub-repository.
+
 When reporting bugs or requesting features:
 
 1. Navigate to the appropriate sub-repository's Issues tab
@@ -135,4 +146,4 @@ Contributors who make significant improvements will be recognized in the project
 
 ---
 
-**Remember:** All contributions must be made to the specific sub-repositories, not to this main snapshot repository.
+**Remember:** Module-level contributions must be made to the specific sub-repositories. The main snapshot repository should only receive aggregation-layer maintenance changes.
