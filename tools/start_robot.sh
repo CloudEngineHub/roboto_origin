@@ -177,7 +177,7 @@ source install/setup.bash
 print_info "停止现有相关screen会话..."
 cleanup_sessions
 
-start_component "inference_session" "ros2 launch inference inference.launch.py" "inference_node" 5
+start_component "inference_session" "ros2 launch roboparty_inference inference.launch.py" "inference_node" 5
 start_component "joy_session" "ros2 run joy joy_node" "joy_node" 2
 
 # 验证节点的 DDS 配置
