@@ -28,7 +28,7 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 ## Community
 
-**QQ Group:** 1078670917
+**QQ Group:** 546376843
 
 <table>
   <tr>
