@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0
+// Copyright (C) 2025-2026 Luo1imasi
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "robot_interface.hpp"
@@ -7,7 +10,12 @@ namespace py = pybind11;
 PYBIND11_MODULE(robot_py, m) {
     py::class_<RobotInterface>(m, "RobotInterface")
         .def(py::init<const std::string&>(), py::arg("config_file"))
-        .def("apply_action", &RobotInterface::apply_action, py::arg("action"))
+        .def("apply_action", &RobotInterface::apply_action,
+             py::arg("p"),
+             py::arg("v")   = std::vector<float>{},
+             py::arg("kp")  = std::vector<float>{},
+             py::arg("kd")  = std::vector<float>{},
+             py::arg("tau") = std::vector<float>{})
         .def("init_motors", &RobotInterface::init_motors)
         .def("deinit_motors", &RobotInterface::deinit_motors)
         .def("reset_joints", &RobotInterface::reset_joints, py::arg("joint_default_angle"))
