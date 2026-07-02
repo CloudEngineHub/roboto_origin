@@ -21,6 +21,76 @@ print_error() {
     echo -e "${RED}$1${NC}"
 }
 
+show_usage() {
+    echo "用法: $0 [--robot ROBOT] [--policy POLICY]"
+    echo "      $0 [ROBOT] [POLICY]"
+    echo
+    echo "默认: robot=rpo, policy=default"
+    echo "示例: $0 --robot rpo --policy amp"
+    echo "示例: $0 rpo beyondmimic"
+}
+
+validate_name() {
+    local label=$1
+    local value=$2
+
+    if [[ ! "$value" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]]; then
+        print_error "$label 必须以字母或数字开头，且只能包含字母、数字、下划线、短横线和点: $value"
+        exit 1
+    fi
+}
+
+ROBOT="rpo"
+POLICY="default"
+ROBOT_SET=0
+POLICY_SET=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --robot|-r)
+            if [ $# -lt 2 ]; then
+                print_error "缺少 --robot 参数值"
+                show_usage
+                exit 1
+            fi
+            ROBOT="$2"
+            ROBOT_SET=1
+            shift 2
+            ;;
+        --policy|-p)
+            if [ $# -lt 2 ]; then
+                print_error "缺少 --policy 参数值"
+                show_usage
+                exit 1
+            fi
+            POLICY="$2"
+            POLICY_SET=1
+            shift 2
+            ;;
+        --help|-h)
+            show_usage
+            exit 0
+            ;;
+        *)
+            if [ "$ROBOT_SET" -eq 0 ]; then
+                ROBOT="$1"
+                ROBOT_SET=1
+            elif [ "$POLICY_SET" -eq 0 ]; then
+                POLICY="$1"
+                POLICY_SET=1
+            else
+                print_error "未知参数: $1"
+                show_usage
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+validate_name "robot" "$ROBOT"
+validate_name "policy" "$POLICY"
+
 # 函数：启动组件并检查（先启动ROS节点，再设置实时优先级）
 start_component() {
     local session_name=$1
@@ -128,6 +198,24 @@ verify_dds_effectiveness() {
 cd "$(dirname "$0")"
 cd ..
 
+POLICY_FILE="$POLICY"
+if [[ "$POLICY_FILE" != *.yaml ]]; then
+    POLICY_FILE="${POLICY_FILE}.yaml"
+fi
+
+ROBOT_DIR="src/inference/robots/$ROBOT"
+if [ ! -f "$ROBOT_DIR/robot.yaml" ]; then
+    print_error "机器人配置不存在: $ROBOT_DIR/robot.yaml"
+    exit 1
+fi
+if [ ! -f "$ROBOT_DIR/configs/$POLICY_FILE" ]; then
+    print_error "推理配置不存在: $ROBOT_DIR/configs/$POLICY_FILE"
+    exit 1
+fi
+
+print_info "选择机器人: $ROBOT"
+print_info "选择策略: $POLICY"
+
 # 设置 DDS 配置文件
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 export RMW_FASTRTPS_USE_QOS_FROM_XML=1
@@ -177,7 +265,7 @@ source install/setup.bash
 print_info "停止现有相关screen会话..."
 cleanup_sessions
 
-start_component "inference_session" "ros2 launch roboparty_inference inference.launch.py" "inference_node" 5
+start_component "inference_session" "ros2 launch roboparty_inference inference.launch.py robot:=$ROBOT policy:=$POLICY" "inference_node" 5
 start_component "joy_session" "ros2 run joy joy_node" "joy_node" 2
 
 # 验证节点的 DDS 配置

@@ -149,7 +149,7 @@
 对于 **电机 ID**，请参见 [产品安装手册](https://roboparty.feishu.cn/wiki/OiO2wF4NiiE08Yk1yJjcgnumnUw) 中对电机 ID 的定义，并使用达妙上位机工具进行设置，使用教程参见 [达妙科技文档](https://gitee.com/kit-miao/damiao-document)。
 
 对于 **IMU**，我们默认使用 **`921600` 波特率** 与 **`500HZ` 频率**。如何使用上位机进行修改参见 [HiPNUC 产品手册](https://www.hipnuc.com/resource_hi14.html)。
-> **提示**：也可以使用其他波特率，但请 **保证频率大于 200HZ**。若使用其他波特率，请同步修改 `src/inference/config/robot.yaml` 中的 IMU 配置。
+> **提示**：也可以使用其他波特率，但请 **保证频率大于 200HZ**。若使用其他波特率，请同步修改 `src/inference/robots/rpo/robot.yaml` 中的 IMU 配置。
 
 ## 硬件连接
 
@@ -249,7 +249,7 @@ python3 scripts/set_zero.py
 
 > **警告**：启动机器人前，确保机器人完成零点标定，**请务必阅读 [安全操作指南](https://roboparty.feishu.cn/wiki/ZGtnwpHCjii2XykBYMGchoBBnSl)！**
 
-此外，请特别注意 `src/inference/config/robot.yaml` 中的零点偏移配置：
+此外，请特别注意 `src/inference/robots/rpo/robot.yaml` 中的零点偏移配置：
 
 ```yaml
 motor_zero_offset: 
@@ -266,6 +266,13 @@ motor_zero_offset:
 
 ```bash
 ./tools/start_robot.sh
+```
+
+默认会启动 `rpo` 机器人的 `default` 策略。也可以显式选择机器人和策略：
+
+```bash
+./tools/start_robot.sh --robot rpo --policy amp
+./tools/start_robot.sh rpo beyondmimic
 ```
 
 `./tools/start_robot.sh` 会自动执行 `colcon build --symlink-install` 编译工作空间，并在后台启动以下两个 `screen` 会话：
@@ -287,27 +294,16 @@ screen -S inference_session -X quit
 screen -S joy_session -X quit
 ```
 
-如果需要切换不同的策略模型，可以先修改 `src/inference/launch/inference.launch.py` 中加载的配置文件：
+如果需要切换不同的策略模型，可以通过 `policy` 参数选择 `src/inference/robots/rpo/configs/` 下的配置：
 
-```python
-configs = [
-    os.path.join(
-        get_package_share_directory("inference"),
-        "config",
-        "inference.yaml",
-    ),
-]
+```bash
+./tools/start_robot.sh --robot rpo --policy default
+./tools/start_robot.sh --robot rpo --policy amp
+./tools/start_robot.sh --robot rpo --policy attn_enc
+./tools/start_robot.sh --robot rpo --policy beyondmimic
+./tools/start_robot.sh --robot rpo --policy getup
+./tools/start_robot.sh --robot rpo --policy interrupt
 ```
-
-将其中的 `inference.yaml` 替换为目标配置文件名即可，例如：
-
-- `inference_amp.yaml`
-- `inference_attn_enc.yaml`
-- `inference_beyondmimic.yaml`
-- `inference_getup.yaml`
-- `inference_interrupt.yaml`
-
-修改完成后，重新运行 `./tools/start_robot.sh`，启动时就会加载对应配置，从而使用不同策略。
 
 ### 手柄控制
 
@@ -492,7 +488,7 @@ motor.motor_mit_cmd(0.0, 0.0, 5.0, 1.0, 0.0)
 
 ```python
 import robot_py
-robot = robot_py.RobotInterface("config/robot.yaml")
+robot = robot_py.RobotInterface("src/inference/robots/rpo/robot.yaml")
 robot.init_motors()
 robot.apply_action([0.0] * 23)
 ```

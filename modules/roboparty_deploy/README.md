@@ -149,7 +149,7 @@ Before connecting, please complete the motor ID setup and configure the IMU baud
 For the **motor ID**, please refer to the motor ID definition in [RoboParty Roboto Origin Product Installation Manual](https://roboparty.feishu.cn/wiki/OiO2wF4NiiE08Yk1yJjcgnumnUw), and use the Damiao host computer tool to set it. For tutorials, please see [Damiao Technology Docs](https://gitee.com/kit-miao/damiao-document).
 
 For the **IMU**, we use **`921600` baud rate** and **`500HZ` frequency** by default. How to modify it using the host computer, see the [HiPNUC Product Manual](https://www.hipnuc.com/resource_hi14.html).
-> **Tip**: Other baud rates can also be used, but please **ensure the frequency is greater than 200HZ**. If a different baud rate is used, synchronously modify the IMU configuration in `src/inference/config/robot.yaml`.
+> **Tip**: Other baud rates can also be used, but please **ensure the frequency is greater than 200HZ**. If a different baud rate is used, synchronously modify the IMU configuration in `src/inference/robots/rpo/robot.yaml`.
 
 ## Hardware Connection
 
@@ -249,7 +249,7 @@ python3 scripts/set_zero.py
 
 > **Warning**: Before starting the robot, ensure the robot has completed zero point calibration. **Please be sure to read [RoboParty Roboto Origin Safety Operation Guide](https://roboparty.feishu.cn/wiki/ZGtnwpHCjii2XykBYMGchoBBnSl) first.**
 
-Additionally, pay special attention to the zero point offset configuration in `src/inference/config/robot.yaml`:
+Additionally, pay special attention to the zero point offset configuration in `src/inference/robots/rpo/robot.yaml`:
 
 ```yaml
 motor_zero_offset: 
@@ -266,6 +266,13 @@ Once everything is ready, run the script to start the software:
 
 ```bash
 ./tools/start_robot.sh
+```
+
+By default, this starts the `default` policy for the `rpo` robot. You can also select the robot and policy explicitly:
+
+```bash
+./tools/start_robot.sh --robot rpo --policy amp
+./tools/start_robot.sh rpo beyondmimic
 ```
 
 `./tools/start_robot.sh` automatically runs `colcon build --symlink-install` to build the workspace and starts the following two `screen` sessions in the background:
@@ -287,27 +294,16 @@ screen -S inference_session -X quit
 screen -S joy_session -X quit
 ```
 
-If you need to switch to a different policy model, first update the config file loaded by `src/inference/launch/inference.launch.py`:
+If you need to switch to a different policy model, pass the `policy` argument. It selects a config from `src/inference/robots/rpo/configs/`:
 
-```python
-configs = [
-    os.path.join(
-        get_package_share_directory("inference"),
-        "config",
-        "inference.yaml",
-    ),
-]
+```bash
+./tools/start_robot.sh --robot rpo --policy default
+./tools/start_robot.sh --robot rpo --policy amp
+./tools/start_robot.sh --robot rpo --policy attn_enc
+./tools/start_robot.sh --robot rpo --policy beyondmimic
+./tools/start_robot.sh --robot rpo --policy getup
+./tools/start_robot.sh --robot rpo --policy interrupt
 ```
-
-Replace `inference.yaml` with the target config filename, for example:
-
-- `inference_amp.yaml`
-- `inference_attn_enc.yaml`
-- `inference_beyondmimic.yaml`
-- `inference_getup.yaml`
-- `inference_interrupt.yaml`
-
-After the change, run `./tools/start_robot.sh` again. The startup process will then load the selected config and use the corresponding policy.
 
 ### Gamepad Control
 
@@ -492,7 +488,7 @@ The `RobotInterface` class is used to unify the control of the entire robot, aut
 
 ```python
 import robot_py
-robot = robot_py.RobotInterface("config/robot.yaml")
+robot = robot_py.RobotInterface("src/inference/robots/rpo/robot.yaml")
 robot.init_motors()
 robot.apply_action([0.0] * 23)
 ```
