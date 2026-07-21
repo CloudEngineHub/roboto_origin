@@ -150,7 +150,7 @@ git pull
 
 ---
 
-![Star History Chart](https://api.star-history.com/svg?repos=Roboparty/roboto_origin&type=Date)
+[![Star History Chart](assets/star-history.svg)](https://github.com/Roboparty/roboto_origin/stargazers)
 
 ---
 

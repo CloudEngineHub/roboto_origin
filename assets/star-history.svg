@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-labelledby="title description">
+  <title id="title">Star history chart is waiting for its first update</title>
+  <desc id="description">Run the Update star history chart workflow to generate this chart.</desc>
+  <style>
+    .title { fill: #f0f6fc; font: 600 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .body { fill: #8b949e; font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  </style>
+  <rect width="100%" height="100%" rx="12" fill="#0d1117"/>
+  <path d="M190 370 C300 350 355 305 430 310 S565 225 640 245 S725 150 770 135" fill="none" stroke="#2f81f7" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="770" cy="135" r="7" fill="#58a6ff"/>
+  <text x="480" y="215" class="title" text-anchor="middle">Star History</text>
+  <text x="480" y="252" class="body" text-anchor="middle">Waiting for the first GitHub Actions update</text>
+  <text x="480" y="282" class="body" text-anchor="middle">Run “Update star history chart” manually after merging</text>
+</svg>
