@@ -200,6 +200,27 @@ The udev rules also include the IMU serial port configuration. If the rules take
 
 ## Software Usage
 
+### Initial Build and Terminal Environment
+
+Run the following commands from the repository root. `/opt/ros/humble/setup.bash` is provided by the ROS2 Humble installation. This repository's `install/setup.bash` is not included in the source tree; it is generated after the workspace is built successfully for the first time.
+
+For the initial build, or whenever source changes require a rebuild, use this order:
+
+```bash
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install
+source install/setup.bash
+```
+
+After the workspace has been built, a new terminal only needs to load the environments again:
+
+```bash
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+```
+
+`source` only affects the current terminal. `start_robot.sh` and `start_camera.sh` perform their required builds and load the workspace inside their own processes, so `install/setup.bash` does not need to exist before running them directly. However, that environment does not propagate back to the terminal that invoked the script. After a script returns, source both environments in any terminal where you want to call ROS2 services or use the Python SDK.
+
 ### Motor Zeroing (Initial Setup / Zero Loss)
 
 > **Note**: Motor zeroing usually only needs to be performed once during the initial setup. Run it again only if a motor has been serviced, replaced, or has lost its zero point.
@@ -213,32 +234,34 @@ The repository provides two zero-calibration methods for different situations:
 
 For the `/set_zeros` service, the recommended sequence is:
 
-1. Source the ROS2 environment and the workspace environment in the current terminal.
-2. Start the software with `./tools/start_robot.sh`.
+1. From the repository root, run `./tools/start_robot.sh`. The script performs the required build, generates `install/setup.bash`, starts the software in background `screen` sessions, and then returns to the current terminal.
+2. After the script starts successfully and returns, load the ROS2 and workspace environments in the same terminal.
 3. Call `/init_motors` to initialize the motors.
 4. Move the robot to the target zero pose and make sure inference is not running.
 5. Call `/set_zeros` to write the current zero positions.
 
 ```bash
+# Repository root; run all commands below in the same terminal
+./tools/start_robot.sh
 source /opt/ros/humble/setup.bash
 source install/setup.bash
-./tools/start_robot.sh
 ros2 service call /init_motors std_srvs/srv/Trigger
 ros2 service call /set_zeros std_srvs/srv/Trigger
 ```
 
 For the `scripts/set_zero.py` script:
 
-1. Build the workspace first and make sure `install/setup.bash` has been generated.
-2. Source the ROS2 environment and the workspace environment in the current terminal.
-3. Make sure the CAN interfaces and udev mappings are already working.
-4. Check or edit `scripts/config/set_zero.yaml` as needed so the motor IDs, CAN interfaces, and motor models match the hardware.
-5. Run the script in an interactive terminal and manually move each motor to its target zero position when prompted.
-6. Press `Enter` to write the zero for the current motor, or press Space to skip it.
+1. Load the ROS2 environment from the repository root.
+2. Build the workspace to generate `install/setup.bash`.
+3. Load the workspace environment in the current terminal.
+4. Make sure the CAN interfaces and udev mappings are already working.
+5. Check or edit `scripts/config/set_zero.yaml` as needed so the motor IDs, CAN interfaces, and motor models match the hardware.
+6. Run the script in an interactive terminal and manually move each motor to its target zero position when prompted.
+7. Press `Enter` to write the zero for the current motor, or press Space to skip it.
 
 ```bash
-colcon build --symlink-install
 source /opt/ros/humble/setup.bash
+colcon build --symlink-install
 source install/setup.bash
 python3 scripts/set_zero.py
 ```
@@ -303,7 +326,34 @@ If you need to switch to a different policy model, pass the `policy` argument. I
 ./tools/start_robot.sh --robot rpo --policy beyondmimic
 ./tools/start_robot.sh --robot rpo --policy getup
 ./tools/start_robot.sh --robot rpo --policy interrupt
+./tools/start_robot.sh --robot rpo --policy parkour
 ```
+
+`parkour` depends on the `/depth_obs` observation. Before starting robot inference, launch RealSense and depth processing in another terminal:
+
+```bash
+./tools/start_camera.sh --policy parkour
+```
+
+#### Sparse Observation History
+
+Entries in `obs_layouts` support the `name:size@tap|tap` format to select specific history frames for an observation source. A tap is measured in inference steps: `0` is the current frame and `1` is the previous frame. Taps must be non-negative, unique, and smaller than the corresponding `frame_stacks` value. Entries without `@` still use all history frames. Specifying taps for any entry enables sparse history mode for that policy.
+
+For example, `parkour` uses only the current perception observation while retaining eight frames for the other observation sources:
+
+```yaml
+obs_layouts:
+  - "ang_vel:3, gravity_b:3, cmd_vel:3, dof_pos:23, dof_vel:23, last_action:23, perception:128@0"
+frame_stacks: [8]
+obs_stack_orders: ["obs_major"]
+```
+
+The resulting input contains `78 × 8 + 128 = 752` values. `obs_stack_orders` determines how the history is arranged:
+
+- `obs_major`: observations are grouped by source and then by tap. Explicit taps preserve their written order; entries without taps are arranged from the oldest frame to the current frame.
+- `frame_major`: frames are arranged from oldest to current, with entries in `obs_layouts` order within each frame. Explicit taps must be strictly descending, for example `@4|2|0`.
+
+On the first inference step after policy initialization or reset, the current observation fills every history slot. At startup, the resulting input size is checked against the ONNX model.
 
 ### Gamepad Control
 
@@ -389,10 +439,12 @@ This repository provides a Python SDK to facilitate hardware control using Pytho
 > **Note**: The `imu_py`, `motors_py`, and `robot_py` modules are generated from the workspace build output. Before running any Python SDK example or script, first build the workspace and source both the ROS2 environment and this workspace's `install/setup.bash`.
 
 ```bash
-colcon build --symlink-install
 source /opt/ros/humble/setup.bash
+colcon build --symlink-install
 source install/setup.bash
 ```
+
+> **Safety**: The motor and robot SDKs directly control real hardware. Before use, securely support the robot, make an emergency stop available, and verify all device IDs, interfaces, and models. Do not let multiple programs control the same device. Relative paths below assume the repository root is the current directory.
 
 > **Tip**: For detailed Python script examples, please refer to the `scripts/` directory.
 
@@ -400,61 +452,81 @@ source install/setup.bash
 
 #### Static Methods
 
-- `create_imu(imu_id: int, interface_type: str, interface: str, imu_type: str, baudrate: int = 0) -> IMUDriver`: Create an IMU driver instance.
+- `create_imu(imu_id: int, interface_type: str, interface: str, imu_type: str, baudrate: int = 0) -> IMUDriver`: Create an IMU driver. The current implementation supports `imu_type="HIPNUC"` with `interface_type="serial"` or `"can"`.
+
+`interface` is a serial device such as `/dev/ttyUSB0` or a SocketCAN interface such as `can0`. Both serial and CAN configurations read and pass `baudrate`: serial uses it as the communication rate, while CAN uses a SocketCAN interface configured to the same bitrate. In CAN mode, `imu_id` identifies incoming device frames; in serial mode, it is stored only as a configuration ID.
 
 #### Member Methods
 
-- `get_imu_id() -> int`: Get IMU ID.
-- `get_ang_vel() -> List[float]`: Get angular velocity [x, y, z].
-- `get_quat() -> List[float]`: Get quaternion [w, x, y, z].
-- `get_lin_acc() -> List[float]`: Get linear acceleration [x, y, z].
-- `get_temperature() -> float`: Get temperature.
+- `get_imu_id() -> int`: Return the IMU ID passed at construction; this does not read the hardware.
+- `get_ang_vel() -> List[float]`: Get the latest cached angular velocity `[x, y, z]` (rad/s).
+- `get_quat() -> List[float]`: Get the latest cached quaternion `[w, x, y, z]`.
+- `get_lin_acc() -> List[float]`: Get the latest cached linear acceleration `[x, y, z]` (m/s²).
+- `get_temperature() -> float`: Get cached temperature (°C); the current serial implementation does not update this field.
+
+Getters return asynchronous values in the IMU frame and do not synchronously read the device. Caches start at zero, and the SDK provides no timestamp or ready flag; wait for the first valid sample and handle timeouts or disconnection in the application.
 
 #### Example
 
 ```python
+import time
 import imu_py
 imu = imu_py.IMUDriver.create_imu(8, "serial", "/dev/ttyUSB0", "HIPNUC", 921600)
+time.sleep(0.1)  # Feedback is asynchronous; wait for the first sample
 quat = imu.get_quat()
 ```
 
 ### 2. Motor SDK (`motors_py`)
 
-Provides `MotorControlMode` enum: `NONE`, `MIT`, `POS`, `SPD`.
+The `MotorControlMode` enum provides `MIT`, `POS`, and `SPD` as operating modes. `NONE` only means that no mode has been set and should not be passed as a control mode.
 
 #### Static Methods
 
-- `create_motor(motor_id: int, interface_type: str, interface: str, motor_type: str, motor_model: int, master_id_offset: int = 0, motor_zero_offset: double = 0.0) -> MotorDriver`: Create a motor driver instance.
+- `create_motor(motor_id: int, interface_type: str, interface: str, motor_type: str, motor_model: int, master_id_offset: int = 0, motor_zero_offset: float = 0.0) -> MotorDriver`: Create a motor driver and immediately open its communication interface.
+
+Supported motor types are `DM`, `EVO`, `LRO`, and `XYN`. DM/EVO use CAN or CAN-FD, while LRO/XYN use CAN-FD. `interface` is an interface name such as `can0`, `motor_model` must match the hardware, only DM uses `master_id_offset`, and `motor_zero_offset` is a software position offset in radians.
 
 #### Member Methods
 
-- `init_motor()`: Initialize motor.
-- `deinit_motor()`: Deinitialize motor.
-- `set_motor_control_mode(mode: MotorControlMode)`: Set control mode.
-- `motor_mit_cmd(pos: float, vel: float, kp: float, kd: float, torque: float)`: MIT control command.
-- `motor_pos_cmd(pos: float, spd: float, ignore_limit: bool = False)`: Position control command.
-- `motor_spd_cmd(spd: float)`: Speed control command.
-- `lock_motor() / unlock_motor()`: Lock/Unlock motor.
-- `set_motor_zero()`: Set current position as zero point.
-- `clear_motor_error()`: Clear error.
-- `get_motor_pos() -> float`: Get position (rad).
-- `get_motor_spd() -> float`: Get speed (rad/s).
-- `get_motor_current() -> float`: Get current (A).
-- `get_motor_temperature() -> float`: Get temperature (°C).
-- `get_error_id() -> int`: Get error ID.
-- `get_motor_id() -> int`: Get motor ID.
-- `get_motor_control_mode() -> int`: Get control mode.
-- `get_response_count() -> int`: Get response count.
-- `refresh_motor_status()`: Refresh motor status.
+- `init_motor() -> int`: Initialize and enable the motor, returning a driver status/error code rather than a common Boolean result.
+- `deinit_motor()`: Send a disable command.
+- `set_motor_control_mode(mode: MotorControlMode)`: Set the control mode.
+- `motor_mit_cmd(pos: float, vel: float, kp: float, kd: float, torque: float)`: Send a single-motor MIT command. Position is in radians, velocity in rad/s, feed-forward torque is used as N·m, and `kp`/`kd` are the stiffness/damping gains defined by the driver protocol.
+- `motors_mit_cmd(f_p: List[float], f_v: List[float], f_kp: List[float], f_kd: List[float], f_t: List[float])`: Send batched MIT commands for up to eight slots; support depends on the driver.
+- `motor_pos_cmd(pos: float, spd: float, ignore_limit: bool = False)`: Send a position command in radians with speed in rad/s. Every current driver ignores `ignore_limit`; passing `True` does not bypass limits.
+- `motor_spd_cmd(spd: float)`: Send a speed command (rad/s).
+- `set_motor_zero() -> bool`: Set the current motor-shaft position as the hardware zero and return the driver's check result.
+- `write_motor_flash() -> bool`: Request parameter persistence and return the driver result.
+- `get_motor_param(param_cmd: int)`: Request a driver parameter; the current Python API does not return its value directly.
+- `reset_motor_id()`: Reset the hardware ID according to the driver rules.
+- `clear_motor_error()`: Send a clear-error command.
+- `get_motor_pos() -> float`: Get the latest cached position (rad).
+- `get_motor_spd() -> float`: Get the latest cached speed (rad/s).
+- `get_motor_current() -> float`: Get the latest cached torque/current feedback; the physical quantity depends on the driver.
+- `get_motor_temperature() -> float`: Get the latest cached temperature (°C).
+- `get_error_id() -> int`: Get the cached error code.
+- `get_motor_id() -> int`: Get the local motor ID.
+- `get_motor_control_mode() -> int`: Get the local control mode.
+- `get_response_count() -> int`: Get the offline-detection counter; requests increment it and feedback clears it.
+- `refresh_motor_status()`: Perform a driver-specific status refresh.
+- `get_can_name() -> str`: Return the CAN/CAN-FD interface name configured at construction.
+
+Call `set_motor_control_mode()` once before first using or switching a control mode; otherwise, that control call may only change mode without sending its target. Feedback getters read asynchronous caches and do not actively request hardware status.
+
+Support for batched control, parameter persistence, ID reset, and status refresh depends on the driver; check the corresponding implementation before use.
 
 #### Example
 
 ```python
 import motors_py
 motor = motors_py.MotorDriver.create_motor(1, "can", "can0", "DM", 0, 16)
-motor.init_motor()
-motor.set_motor_control_mode(motors_py.MotorControlMode.MIT)
-motor.motor_mit_cmd(0.0, 0.0, 5.0, 1.0, 0.0)
+try:
+    motor.init_motor()
+    motor.set_motor_control_mode(motors_py.MotorControlMode.MIT)
+    # kp=0 applies damping without tracking a position target
+    motor.motor_mit_cmd(0.0, 0.0, 0.0, 1.0, 0.0)
+finally:
+    motor.deinit_motor()
 ```
 
 ### 3. Robot SDK (`robot_py`)
@@ -463,32 +535,44 @@ The `RobotInterface` class is used to unify the control of the entire robot, aut
 
 #### Constructor
 
-- `RobotInterface(config_file: str)`: Create an instance based on the configuration file path.
+- `RobotInterface(config_file: str)`: Read the YAML file and create the motor and IMU drivers. Construction opens the hardware interfaces but does not enable the motors. Relative paths are resolved from the current working directory.
+
+All joint vectors use the logical order in the configuration. `p`, the target passed to `reset_joints()`, and every non-empty `v`, `kp`, `kd`, and `tau` vector must match the motor count; the current implementation does not validate lengths.
 
 #### Member Methods
 
-- `init_motors()`: Initialize all motors.
-- `deinit_motors()`: Deinitialize all motors.
-- `reset_joints(joint_default_angle: List[float])`: Reset all joints to default angles.
-- `apply_action(action: List[float])`: Apply control action (joint target position/torque, etc., depending on internal implementation).
-- `refresh_joints()`: Refresh all joint states.
-- `set_zeros()`: Set all current joint positions to zero.
-- `clear_errors()`: Clear all motor errors.
-- `get_joint_q() -> List[float]`: Get all joint positions.
-- `get_joint_vel() -> List[float]`: Get all joint velocities.
-- `get_joint_tau() -> List[float]`: Get all joint torques.
-- `get_quat() -> List[float]`: Get IMU quaternion [w, x, y, z].
-- `get_ang_vel() -> List[float]`: Get IMU angular velocity.
+- `init_motors() -> None`: Initialize and enable all motors. Driver return codes are not returned to Python.
+- `deinit_motors() -> None`: Disable all motors.
+- `apply_action(p: List[float], v: List[float] = [], kp: List[float] = [], kd: List[float] = [], tau: List[float] = []) -> None`: Send joint MIT commands. Position is in radians, velocity in rad/s, and `tau` is feed-forward torque. Empty `v`/`tau` vectors use zero, while empty `kp`/`kd` vectors use configured values. No command is sent before motor initialization.
+- `reset_joints(joint_default_angle: List[float]) -> None`: Smoothly move the robot to the target angles in about five seconds.
+- `read_joints() -> None`: Convert asynchronous motor caches to logical joint order and update the joint cache without actively requesting status.
+- `refresh_joints() -> None`: Ask each driver to refresh status, wait one second, and update the joint cache. Exact refresh behavior depends on the driver.
+- `read_imu() -> None`: Transform the asynchronous IMU cache into the body frame and update the IMU cache.
+- `set_zeros() -> None`: Set each current motor-shaft position as the hardware zero. This does not change configured software offsets or immediately refresh the joint cache.
+- `clear_errors() -> None`: Send a clear-error command to all motors.
+- `get_joint_q() -> List[float]`: Get cached logical joint positions (rad).
+- `get_joint_vel() -> List[float]`: Get cached logical joint velocities (rad/s).
+- `get_joint_tau() -> List[float]`: Get cached logical joint effort. Its underlying physical quantity and unit depend on the motor driver.
+- `get_quat() -> List[float]`: Get the body-frame quaternion `[w, x, y, z]` written by the most recent `read_imu()`.
+- `get_ang_vel() -> List[float]`: Get the body-frame angular velocity `[x, y, z]` (rad/s) written by the most recent `read_imu()`.
+
+Getters only return the `RobotInterface` cache; call the corresponding `read_*()` method or `refresh_joints()` first.
 
 #### Properties
 
-- `is_init`: (Read-only) Whether the robot is initialized.
+- `is_init: bool`: Read-only software state indicating initialization without subsequent deinitialization; it does not mean that every motor is online or fault-free.
 
 #### Example
 
 ```python
 import robot_py
 robot = robot_py.RobotInterface("src/inference/robots/rpo/robot.yaml")
-robot.init_motors()
-robot.apply_action([0.0] * 23)
+try:
+    robot.init_motors()
+    robot.refresh_joints()
+    joint_q = robot.get_joint_q()
+    robot.apply_action(joint_q)
+finally:
+    if robot.is_init:
+        robot.deinit_motors()
 ```

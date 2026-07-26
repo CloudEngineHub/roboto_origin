@@ -252,7 +252,7 @@ colcon build --symlink-install \
 source install/setup.bash
 
 if ! ros2 pkg prefix realsense2_camera &>/dev/null; then
-    print_error "realsense2_camera 未找到。请初始化 realsense-ros 子模块或安装 ROS 2 RealSense 包"
+    print_error "realsense2_camera 未找到。请检查内置 src/camera/thirdparty/realsense-ros 是否完整，或安装 ROS 2 RealSense 包"
     exit 1
 fi
 if ! ros2 pkg prefix camera &>/dev/null; then
