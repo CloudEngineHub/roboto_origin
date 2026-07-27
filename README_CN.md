@@ -1,5 +1,7 @@
 # roboparty_deploy
 
+[![许可证：GPL v3](https://img.shields.io/badge/许可证-GPLv3-blue.svg)](LICENSE)
+
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-silver)](https://docs.ros.org/en/humble/index.html)
 ![C++](https://img.shields.io/badge/C++-17-blue)
 [![Linux platform](https://img.shields.io/badge/platform-linux--x86_64-orange.svg)](https://releases.ubuntu.com/22.04/)
@@ -576,3 +578,9 @@ finally:
     if robot.is_init:
         robot.deinit_motors()
 ```
+
+## 许可证
+
+除另有说明外，本仓库中由 RoboParty 创作的原创内容依据 [GNU General Public License v3.0 only](LICENSE)（`GPL-3.0-only`）授权。
+
+Git 子模块、已打包二进制文件及其他第三方资料继续遵循其各自的版权和许可证条款；仓库级 GPLv3 声明不会替代这些条款。当前许可证清单和再分发说明见 [LICENSES.md](LICENSES.md)。

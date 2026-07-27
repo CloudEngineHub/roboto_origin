@@ -1,5 +1,7 @@
 # roboparty_deploy
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-silver)](https://docs.ros.org/en/humble/index.html)
 ![C++](https://img.shields.io/badge/C++-17-blue)
 [![Linux platform](https://img.shields.io/badge/platform-linux--x86_64-orange.svg)](https://releases.ubuntu.com/22.04/)
@@ -576,3 +578,9 @@ finally:
     if robot.is_init:
         robot.deinit_motors()
 ```
+
+## License
+
+Unless otherwise stated, original content authored by RoboParty in this repository is licensed under the [GNU General Public License v3.0 only](LICENSE) (`GPL-3.0-only`).
+
+Git submodules, packaged binaries, and other third-party materials retain their own copyright and license terms. The repository-level GPLv3 declaration does not replace those terms. See [LICENSES.md](LICENSES.md) for the current license inventory and redistribution notes.
