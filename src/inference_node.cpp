@@ -3,6 +3,22 @@
 
 #include "inference_node.hpp"
 
+void InferenceNode::update_obs_history(std::vector<float>& history,
+                                       const std::vector<float>& obs,
+                                       int obs_num, int frame_stack,
+                                       bool is_first_frame) {
+    if (is_first_frame) {
+        for (int frame = 0; frame < frame_stack; frame++) {
+            std::copy(obs.begin(), obs.end(), history.begin() + frame * obs_num);
+        }
+        return;
+    }
+    std::move(history.begin() + obs_num,
+              history.begin() + frame_stack * obs_num,
+              history.begin());
+    std::copy(obs.begin(), obs.end(), history.begin() + (frame_stack - 1) * obs_num);
+}
+
 ObsStackOrder InferenceNode::parse_obs_stack_order(const std::string& stack_order_name) {
     if (stack_order_name == "frame_major") {
         return ObsStackOrder::FrameMajor;
@@ -17,16 +33,7 @@ void InferenceNode::update_stacked_obs(std::vector<float>& input_buffer, const s
                                        int obs_num, int frame_stack, ObsStackOrder stack_order,
                                        const std::vector<int>& field_sizes, bool is_first_frame) {
     if (stack_order == ObsStackOrder::FrameMajor) {
-        if (is_first_frame) {
-            for (int frame = 0; frame < frame_stack; frame++) {
-                std::copy(obs.begin(), obs.end(), input_buffer.begin() + frame * obs_num);
-            }
-        } else {
-            std::move(input_buffer.begin() + obs_num,
-                      input_buffer.begin() + frame_stack * obs_num,
-                      input_buffer.begin());
-            std::copy(obs.begin(), obs.end(), input_buffer.begin() + (frame_stack - 1) * obs_num);
-        }
+        update_obs_history(input_buffer, obs, obs_num, frame_stack, is_first_frame);
         return;
     }
 
@@ -51,7 +58,18 @@ void InferenceNode::update_stacked_obs(std::vector<float>& input_buffer, const s
     }
 }
 
-void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string model_path, int input_size){
+void InferenceNode::gather_sparse_obs_history(
+    std::vector<float>& input_buffer,
+    const std::vector<float>& obs_history,
+    const std::vector<ObsHistorySlice>& gather_plan) {
+    auto output = input_buffer.begin();
+    for (const ObsHistorySlice& slice : gather_plan) {
+        output = std::copy_n(
+            obs_history.begin() + slice.history_offset, slice.size, output);
+    }
+}
+
+void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string model_path, int input_size) {
     if (!ctx) {
         ctx = std::make_unique<ModelContext>();
     }
@@ -120,6 +138,8 @@ void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string 
 
 void InferenceNode::reset_runtime_state() {
     is_running_.store(false);
+    std::unique_lock<std::mutex> mode_lock(mode_mutex_);
+    std::unique_lock<std::mutex> control_lock(control_mutex_);
     is_interrupt_.store(false);
     is_motion_policy_.store(false);
     active_policy_idx_ = 0;
@@ -151,6 +171,18 @@ void InferenceNode::reset_runtime_state() {
     for (PolicyRuntime& policy : policies_) {
         reset_policy_runtime(policy);
     }
+    request_depth_history_reset();
+}
+
+void InferenceNode::request_depth_history_reset() {
+    if (!use_depth_ || !clear_depth_history_client_) {
+        return;
+    }
+    if (!clear_depth_history_client_->service_is_ready()) {
+        return;
+    }
+    auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+    clear_depth_history_client_->async_send_request(request);
 }
 
 InferenceNode::PolicyRuntime& InferenceNode::active_policy() {
@@ -208,9 +240,6 @@ void InferenceNode::reset_policy_runtime(PolicyRuntime& policy) {
     for (auto& segment : policy.obs_segments) {
         std::fill(segment.begin(), segment.end(), 0.0f);
     }
-    for (auto& segment : policy.extra_obs_segments) {
-        std::fill(segment.begin(), segment.end(), 0.0f);
-    }
     if (policy.ctx) {
         std::fill(policy.ctx->input_buffer.begin(), policy.ctx->input_buffer.end(), 0.0f);
         std::fill(policy.ctx->output_buffer.begin(), policy.ctx->output_buffer.end(), 0.0f);
@@ -220,7 +249,8 @@ void InferenceNode::reset_policy_runtime(PolicyRuntime& policy) {
 }
 
 void InferenceNode::apply_action() {
-    if(!is_running_.load() || !robot_->is_init_.load()){
+    std::unique_lock<std::mutex> control_lock(control_mutex_);
+    if(!is_running_.load()){
         return;
     }
     {
@@ -278,7 +308,11 @@ void InferenceNode::inference() {
 
         try {
             std::unique_lock<std::mutex> mode_lock(mode_mutex_);
+            if (!is_running_.load()) {
+                continue;
+            }
             auto& policy = active_policy();
+            robot_->read_imu();
             update_obs_segments(policy.obs_segments, policy.obs_layout);
             publish_imu();
             publish_joint_states();
@@ -288,11 +322,15 @@ void InferenceNode::inference() {
                 return std::clamp(val, -clip_observations_, clip_observations_);
             });
 
-            update_stacked_obs(policy.ctx->input_buffer, policy.obs, policy.obs_num, policy.frame_stack,
-                               policy.stack_order, policy.obs_layout_sizes, policy.is_first_frame);
-            if(policy.extra_obs_num > 0){
-                update_obs_segments(policy.extra_obs_segments, policy.extra_obs_layout);
-                flatten_obs_segments(policy.extra_obs_segments, policy.ctx->input_buffer.begin() + policy.frame_stack * policy.obs_num);
+            if (!policy.history_gather_plan.empty()) {
+                update_obs_history(policy.obs_history, policy.obs, policy.obs_num,
+                                   policy.frame_stack, policy.is_first_frame);
+                gather_sparse_obs_history(policy.ctx->input_buffer, policy.obs_history,
+                                          policy.history_gather_plan);
+            } else {
+                update_stacked_obs(policy.ctx->input_buffer, policy.obs, policy.obs_num,
+                                   policy.frame_stack, policy.stack_order,
+                                   policy.obs_layout_sizes, policy.is_first_frame);
             }
             if (policy.motion_loader) {
                 step_motion_frame();
@@ -307,8 +345,9 @@ void InferenceNode::inference() {
                 std::unique_lock<std::mutex> lock(act_mutex_);
                 for (int i = 0; i < policy.ctx->output_buffer.size(); i++) {
                     policy.ctx->output_buffer[i] = std::clamp(policy.ctx->output_buffer[i], -clip_actions_, clip_actions_);
-                    act_[usd2urdf_[i]] = policy.ctx->output_buffer[i];
-                    act_[usd2urdf_[i]] = act_[usd2urdf_[i]] * action_scale_ + joint_default_angle_[usd2urdf_[i]];
+                    const auto joint_idx = usd2urdf_[i];
+                    act_[joint_idx] = policy.ctx->output_buffer[i] * action_scale_[joint_idx] +
+                                      joint_default_angle_[joint_idx];
                 }
                 if(supports_interrupt() && is_interrupt_.load()){
                     std::unique_lock<std::mutex> lock(interrupt_mutex_);

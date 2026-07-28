@@ -24,7 +24,9 @@ class RobotInterface {
    public:
     RobotInterface(const std::string& config_file);
     ~RobotInterface() {
-        deinit_motors();
+        if (is_init_.load()) {
+            deinit_motors();
+        }
         motors_.clear();
         imu_.reset();
     }
@@ -55,48 +57,42 @@ class RobotInterface {
     void reset_joints(std::vector<double> joint_default_angle);
     void set_zeros();
     void clear_errors();
+    void read_joints();
+    void read_imu();
     void refresh_joints();
     std::vector<float> get_joint_q() {
         if (!is_init_.load()) {
-            throw std::runtime_error("Motors not initialized");
+            throw std::runtime_error("Motors are not initialized");
         }
         std::unique_lock<std::mutex> lock(joint_mutex_);
         return joint_q_;
     }
     std::vector<float> get_joint_vel() {
         if (!is_init_.load()) {
-            throw std::runtime_error("Motors not initialized");
+            throw std::runtime_error("Motors are not initialized");
         }
         std::unique_lock<std::mutex> lock(joint_mutex_);
         return joint_vel_;
     }
     std::vector<float> get_joint_tau() {
         if (!is_init_.load()) {
-            throw std::runtime_error("Motors not initialized");
+            throw std::runtime_error("Motors are not initialized");
         }
         std::unique_lock<std::mutex> lock(joint_mutex_);
         return joint_tau_;
     }
-    const std::vector<float>& get_quat() {
+    std::vector<float> get_quat() {
         if (!imu_) {
-            throw std::runtime_error("IMU not initialized");
+            throw std::runtime_error("IMU is not initialized");
         }
-        auto raw = imu_->get_quat();  // w, x, y, z
-        q_body_ = Eigen::Quaternionf(raw[0], raw[1], raw[2], raw[3]) * extrinsic_q_inv_;
-        q_body_.normalize();
-        quat_buf_[0] = q_body_.w();
-        quat_buf_[1] = q_body_.x();
-        quat_buf_[2] = q_body_.y(); 
-        quat_buf_[3] = q_body_.z();
+        std::unique_lock<std::mutex> lock(imu_mutex_);
         return quat_buf_;
     }
-    const std::vector<float>& get_ang_vel() {
+    std::vector<float> get_ang_vel() {
         if (!imu_) {
-            throw std::runtime_error("IMU not initialized");
+            throw std::runtime_error("IMU is not initialized");
         }
-        auto raw = imu_->get_ang_vel();  // in IMU frame
-        Eigen::Map<const Eigen::Vector3f> omega_imu(raw.data());
-        Eigen::Map<Eigen::Vector3f>(ang_vel_buf_.data()) = extrinsic_R_mat_ * omega_imu;
+        std::unique_lock<std::mutex> lock(imu_mutex_);
         return ang_vel_buf_;
     }
 
@@ -111,7 +107,6 @@ class RobotInterface {
     std::shared_ptr<Decouple> ankle_decouple_;
     Eigen::Matrix3f extrinsic_R_mat_ = Eigen::Matrix3f::Identity();
     Eigen::Quaternionf extrinsic_q_inv_ = Eigen::Quaternionf::Identity();
-    Eigen::Quaternionf q_body_;
     std::vector<float> quat_buf_{0.f, 0.f, 0.f, 0.f};
     std::vector<float> ang_vel_buf_{0.f, 0.f, 0.f};
     std::vector<std::shared_ptr<MotorDriver>> motors_;
@@ -119,7 +114,7 @@ class RobotInterface {
     std::vector<float> cached_ankle_action_;
     std::vector<float> last_ankle_joint_target_;
 
-    std::mutex motors_mutex_, joint_mutex_;
+    std::mutex command_mutex_, motors_mutex_, joint_mutex_, imu_mutex_;
     std::vector<float> joint_q_, joint_vel_, joint_tau_;
     std::vector<float> motor_pos_target_, motor_vel_target_, motor_kp_target_, motor_kd_target_, motor_tau_target_;
     std::vector<int> close_chain_joint_idx_, motor2urdf_;
