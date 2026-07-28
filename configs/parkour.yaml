@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Depth node parameters for parkour (camera package)
+# RealSense topic must match configs/realsense_d435i.yaml
+
+depth_node:
+    ros__parameters:
+        depth_topic: "/camera/camera/depth/image_rect_raw"
+        depth_obs_topic: "/depth_obs"
+        depth_process_hz: 50.0
+        use_depth_encoder: true
+        depth_encoder_model_name: "encoder.onnx"
+        depth_encoder_output_dim: 128
+        depth_history_taps: [35, 30, 25, 20, 15, 10, 5, 0]
+        intra_threads: 1
+        debug_vis: true
+        debug_depth_vis_topic: "/debug_depth_vis"
+        depth_use_bilinear: true
+        depth_input_width: 480
+        depth_input_height: 270
+        depth_width: 64
+        depth_height: 36
+        depth_crop_up: 18
+        depth_crop_down: 0
+        depth_crop_left: 16
+        depth_crop_right: 16
+        depth_min_distance: 0.0
+        depth_max_distance: 2.5

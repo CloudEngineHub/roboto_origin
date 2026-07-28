@@ -1,0 +1,4 @@
+[submodule "thirdparty/realsense-ros"]
+	path = thirdparty/realsense-ros
+	url = https://github.com/realsenseai/realsense-ros.git
+	branch = ros2-master
