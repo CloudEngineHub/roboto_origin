@@ -1,0 +1,11 @@
+#environment
+.vscode/
+.idea/
+
+# ros2
+build/
+install/
+log/
+
+# Extracted ONNX Runtime (built from tarballs)
+thirdparty/onnxruntime/
