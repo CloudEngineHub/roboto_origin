@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2025-2026 RoboParty -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # rpo_hardware - RoboParty RPO Humanoid Robot Hardware
 
 **[中文](./README_cn.md)** | English
@@ -59,6 +62,24 @@ Please enter the corresponding directory based on your hardware version to obtai
 ---
 
 > **Note:** The mechanical structure and hardware interfaces of **V2.0 are not compatible with V1.0**. Please confirm the version before assembly or purchasing materials.
+
+## Licence
+
+This is a multi-licensed open-hardware repository:
+
+| Material | Licence |
+| :--- | :--- |
+| RoboParty-owned hardware designs, CAD, PCB, BOM, manufacturing files, URDF and meshes | [CERN-OHL-W-2.0](./LICENSE) |
+| RoboParty-owned software and firmware | GPL-3.0-only |
+| RoboParty-owned user documentation and explanatory media | CC-BY-SA-4.0 |
+| Third-party or vendor-supplied assets | Their original terms; not relicensed by this repository |
+
+The source location for CERN-OHL-W-2.0 Covered Source is
+<https://github.com/Roboparty/rpo_hardware>.
+
+See [LICENSES.md](./LICENSES.md) for the exact scope,
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for exclusions, and
+[TRADEMARKS.md](./TRADEMARKS.md) for brand-use restrictions.
 
 ## Naming Notes
 
