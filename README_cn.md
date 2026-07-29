@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2025-2026 RoboParty -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # rpo_hardware - 萝博派对 RPO 人形机器人硬件
 
 **中文** | [English](./README.md)
@@ -59,6 +62,24 @@
 ---
 
 > **注意：** V2.0 与 V1.0 的机械结构和硬件接口**不兼容**，请务必确认版本后再进行组装或采购物料
+
+## 许可证
+
+本仓库按资料类型采用多许可证管理：
+
+| 资料类型 | 许可证 |
+| :--- | :--- |
+| RoboParty 自有的硬件设计、CAD、PCB、BOM、制造文件、URDF 和网格文件 | [CERN-OHL-W-2.0](./LICENSE) |
+| RoboParty 自有的软件和固件 | GPL-3.0-only |
+| RoboParty 自有的用户文档和说明性素材 | CC-BY-SA-4.0 |
+| 第三方或供应商资料 | 遵循原始条款，不因存放在本仓库而被重新许可 |
+
+CERN-OHL-W-2.0 受许可设计的源码地址为：
+<https://github.com/Roboparty/rpo_hardware>。
+
+详细适用范围见 [LICENSES.md](./LICENSES.md)，第三方资料排除说明见
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)，品牌使用限制见
+[TRADEMARKS.md](./TRADEMARKS.md)。
 
 ## 命名说明
 
