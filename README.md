@@ -144,7 +144,7 @@ By using, modifying, or distributing this software, you acknowledge that you und
 
 ---
 
-**This project is licensed under the GNU General Public License Version 3 (GPLv3). See [LICENSE](LICENSE) for details.**
+**License:** RoboParty-authored aggregation-layer material is provided under GNU GPL version 3 unless otherwise stated. Snapshots under `modules/` and third-party material remain under their own applicable licenses and are not relicensed by the root `LICENSE`. See [LICENSES.md](LICENSES.md) for scope details.
 
 ---
 

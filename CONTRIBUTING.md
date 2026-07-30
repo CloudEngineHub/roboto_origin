@@ -106,7 +106,7 @@ When reporting bugs or requesting features:
 
 ### License
 
-All contributions are subject to the GPLv3 license. By contributing, you agree that your contributions will be licensed under the same terms as the project.
+New contributions made directly to the `roboto_origin` aggregation layer are accepted under GNU GPL version 3 unless the target file states otherwise. Module-level contributions must be submitted to the corresponding source repository and follow that repository's applicable contribution and license terms. This applies prospectively and does not relicense existing module snapshots or third-party material. See [LICENSES.md](LICENSES.md).
 
 ## Development Workflow
 
