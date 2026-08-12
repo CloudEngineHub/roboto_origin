@@ -4,38 +4,107 @@ on:
   schedule:
     - cron: "17 2 * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/data/star-history.json"
+      - ".github/scripts/generate_star_history.py"
+      - ".github/workflows/update-star-history.yml"
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: update-star-history
   cancel-in-progress: true
 
 jobs:
-  update:
+  render:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Prepare snapshot history
+        shell: bash
+        run: |
+          set -euo pipefail
+          history_dir="$RUNNER_TEMP/star-history"
+          mkdir -p "$history_dir"
+
+          if git fetch --quiet --depth=1 origin refs/heads/star-history; then
+            git show FETCH_HEAD:star-history.json > "$history_dir/star-history.json"
+          else
+            cp .github/data/star-history.json "$history_dir/star-history.json"
+          fi
+
+      - name: Generate chart from public repository metadata
+        env:
+          # This job token is read-only, repository-scoped, and expires with the job.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/generate_star_history.py \
+            --history "$RUNNER_TEMP/star-history/star-history.json" \
+            --output "$RUNNER_TEMP/star-history/star-history.svg"
+
+      - name: Upload generated chart
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: star-history
+          path: |
+            ${{ runner.temp }}/star-history/star-history.json
+            ${{ runner.temp }}/star-history/star-history.svg
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: render
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
 
-      - name: Generate chart
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.STAR_HISTORY_TOKEN }}
-        run: python3 .github/scripts/generate_star_history.py
+      - name: Download generated chart
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: star-history
+          path: ${{ runner.temp }}/star-history
 
-      - name: Commit updated chart
+      - name: Publish chart branch
+        shell: bash
         run: |
-          if git diff --quiet -- assets/star-history.svg; then
+          set -euo pipefail
+          generated_dir="$RUNNER_TEMP/star-history"
+
+          if git fetch --quiet --depth=1 origin refs/heads/star-history; then
+            git switch --force-create star-history FETCH_HEAD
+          else
+            git switch --orphan star-history
+            git rm -rf .
+          fi
+
+          cp "$generated_dir/star-history.json" star-history.json
+          cp "$generated_dir/star-history.svg" star-history.svg
+
+          if [[ -z "$(git status --porcelain -- star-history.json star-history.svg)" ]]; then
             echo "Star history is already up to date."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/star-history.svg
+          git add star-history.json star-history.svg
           git commit -m "chore: update star history chart"
-          git push
+          git push origin HEAD:star-history
