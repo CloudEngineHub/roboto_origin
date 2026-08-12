@@ -259,10 +259,13 @@ roboparty_xr_teleop/
 │   └── xr_Control_Atom.py  # compatibility entrypoint
 ├── televuer/
 ├── LICENSE
+├── LICENSES/
+├── LICENSES.md
+├── THIRD_PARTY_NOTICES.md
 ├── README.md
 └── requirements.txt
 ```
 
-## 致谢
+## 许可证
 
-本项目基于 [Unitree xr_teleoperate](https://github.com/unitreerobotics/xr_teleoperate) 修改实现。相关许可信息见 [LICENSE](LICENSE)。
+本仓库按 `GPL-3.0-only` 发布。基于 [Unitree xr_teleoperate](https://github.com/unitreerobotics/xr_teleoperate) 的内容保留原版权和 `Apache-2.0` 声明。Atom01 的 URDF、STL 和文档图片来自 `roboto_origin`，版权属于 RoboParty。许可范围见 [LICENSES.md](LICENSES.md)，第三方归属见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
