@@ -92,7 +92,7 @@ jobs:
             git switch --force-create star-history FETCH_HEAD
           else
             git switch --orphan star-history
-            git rm -rf .
+            git rm -rf --ignore-unmatch .
           fi
 
           cp "$generated_dir/star-history.json" star-history.json
