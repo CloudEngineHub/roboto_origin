@@ -22,7 +22,7 @@ The root license does not relicense Git submodules, packaged binaries, or third-
 | `src/motors` | [Roboparty/roboparty_motors](https://github.com/Roboparty/roboparty_motors) | GPL-3.0 | Separate source repository and license |
 | `src/imu` | [Roboparty/roboparty_imu](https://github.com/Roboparty/roboparty_imu) | GPL-3.0 | Separate source repository and license |
 | `tools/create_ap` | [Roboparty/create_ap](https://github.com/Roboparty/create_ap) | BSD-2-Clause | Preserve the upstream copyright and BSD license |
-| `src/camera` | [Roboparty/roboparty_camera](https://github.com/Roboparty/roboparty_camera) | Not declared at repository root | Confirm and add a license in the source repository before treating it as GPLv3-covered |
+| `src/camera` | [Roboparty/roboparty_camera](https://github.com/Roboparty/roboparty_camera) | GPL-3.0-only | Separate source repository and license |
 
 ## Other Distributed Material / 其他分发内容
 
