@@ -146,11 +146,11 @@ git pull
 
 ---
 
-**本项目采用 GNU General Public License Version 3 (GPLv3) 许可证。详见 [LICENSE](LICENSE) 文件。**
+**许可证：** 除非另有说明，由 RoboParty 创作的聚合层内容按 GNU GPL 第 3 版提供。`modules/` 下的快照及第三方内容继续适用其各自的许可证，不会被根目录 `LICENSE` 重新许可。适用范围详见 [LICENSES.md](LICENSES.md)。
 
 ---
 
-[![Star History Chart](assets/star-history.svg)](https://github.com/Roboparty/roboto_origin/stargazers)
+[![Star History Chart](https://raw.githubusercontent.com/Roboparty/roboto_origin/star-history/star-history.svg)](https://github.com/Roboparty/roboto_origin)
 
 ---
 

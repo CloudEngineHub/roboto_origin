@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an SVG star-history chart for a GitHub repository."""
+"""Update a token-free daily star-count history and render it as SVG."""
 
 from __future__ import annotations
 
@@ -10,8 +10,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from collections import Counter
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -19,88 +18,115 @@ from typing import Any
 
 API_ROOT = "https://api.github.com"
 API_VERSION = "2026-03-10"
-PER_PAGE = 100
 
 
-def parse_github_date(value: str) -> date:
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+def parse_date(value: str) -> date:
+    return date.fromisoformat(value)
 
 
-def request_json(url: str, token: str, accept: str) -> Any:
+def request_repository(repository: str) -> dict[str, Any]:
+    """Read public repository metadata, optionally using a short-lived token."""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "roboto-origin-star-history",
+        "X-GitHub-Api-Version": API_VERSION,
+    }
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(
-        url,
-        headers={
-            "Accept": accept,
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "roboto-origin-star-history",
-            "X-GitHub-Api-Version": API_VERSION,
-        },
+        f"{API_ROOT}/repos/{repository}",
+        headers=headers,
     )
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            return json.load(response)
+            data = json.load(response)
     except urllib.error.HTTPError as error:
         body = error.read().decode("utf-8", errors="replace")
         raise RuntimeError(
-            f"GitHub API request failed ({error.code}) for {url}: {body}"
+            f"GitHub API request failed ({error.code}): {body}"
         ) from error
+    except urllib.error.URLError as error:
+        raise RuntimeError(f"GitHub API request failed: {error.reason}") from error
 
-
-def fetch_repository(repository: str, token: str) -> dict[str, Any]:
-    data = request_json(
-        f"{API_ROOT}/repos/{repository}", token, "application/vnd.github+json"
-    )
     if not isinstance(data, dict):
         raise RuntimeError("GitHub returned invalid repository metadata")
     return data
 
 
-def fetch_stargazer_dates(repository: str, token: str) -> list[date]:
-    dates: list[date] = []
-    page = 1
-    while True:
-        url = (
-            f"{API_ROOT}/repos/{repository}/stargazers"
-            f"?per_page={PER_PAGE}&page={page}"
-        )
-        data = request_json(url, token, "application/vnd.github.star+json")
-        if not isinstance(data, list):
-            raise RuntimeError("GitHub returned an invalid stargazers response")
+def load_history(path: Path, repository: str) -> tuple[date, list[tuple[date, int]]]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"Cannot read star history from {path}: {error}") from error
 
-        for item in data:
-            starred_at = item.get("starred_at") if isinstance(item, dict) else None
-            if not starred_at:
-                raise RuntimeError(
-                    "The stargazers response has no timestamps. Ensure the workflow "
-                    "token can read repository metadata."
-                )
-            dates.append(parse_github_date(starred_at))
+    if not isinstance(data, dict) or data.get("repository") != repository:
+        raise RuntimeError(f"{path} does not describe {repository}")
 
-        if len(data) < PER_PAGE:
-            break
-        page += 1
+    try:
+        created_at = parse_date(data["created_at"])
+        raw_snapshots = data["snapshots"]
+    except (KeyError, TypeError, ValueError) as error:
+        raise RuntimeError(f"{path} has invalid metadata") from error
 
-    return dates
+    if not isinstance(raw_snapshots, list):
+        raise RuntimeError(f"{path} has invalid snapshots")
+
+    snapshots: list[tuple[date, int]] = []
+    for item in raw_snapshots:
+        try:
+            snapshot_day = parse_date(item["date"])
+            stars = int(item["stars"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise RuntimeError(f"{path} has an invalid snapshot") from error
+        if stars < 0 or snapshot_day < created_at:
+            raise RuntimeError(f"{path} has an invalid snapshot")
+        snapshots.append((snapshot_day, stars))
+
+    if not snapshots:
+        raise RuntimeError(f"{path} contains no snapshots")
+    if snapshots != sorted(snapshots) or len({day for day, _ in snapshots}) != len(
+        snapshots
+    ):
+        raise RuntimeError(f"{path} snapshots must be unique and sorted")
+    return created_at, snapshots
 
 
-def fetch_history(repository: str, token: str) -> tuple[date, list[date]]:
-    # A star can be added or removed during pagination. Retry once rather than
-    # publishing a chart that silently contains an incomplete history.
-    for attempt in range(2):
-        metadata = fetch_repository(repository, token)
-        created_at = parse_github_date(metadata["created_at"])
-        starred_dates = fetch_stargazer_dates(repository, token)
-        current_metadata = fetch_repository(repository, token)
-        expected_count = int(current_metadata["stargazers_count"])
-        if len(starred_dates) == expected_count:
-            return created_at, starred_dates
-        if attempt == 0:
-            continue
+def update_history(
+    snapshots: list[tuple[date, int]], snapshot_day: date, stars: int
+) -> list[tuple[date, int]]:
+    if stars < 0:
+        raise RuntimeError("Star count cannot be negative")
+    if snapshot_day < snapshots[-1][0]:
         raise RuntimeError(
-            "Stargazer history changed while it was being fetched: "
-            f"received {len(starred_dates)} entries, expected {expected_count}."
+            f"Snapshot date {snapshot_day} precedes the latest stored snapshot "
+            f"{snapshots[-1][0]}"
         )
-    raise AssertionError("unreachable")
+    if snapshot_day == snapshots[-1][0]:
+        return [*snapshots[:-1], (snapshot_day, stars)]
+    return [*snapshots, (snapshot_day, stars)]
+
+
+def write_history(
+    path: Path,
+    repository: str,
+    created_at: date,
+    snapshots: list[tuple[date, int]],
+) -> None:
+    data = {
+        "repository": repository,
+        "created_at": created_at.isoformat(),
+        "snapshots": [
+            {"date": snapshot_day.isoformat(), "stars": stars}
+            for snapshot_day, stars in snapshots
+        ],
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 def y_axis(maximum: int, tick_count: int = 5) -> tuple[int, int]:
@@ -122,25 +148,20 @@ def y_axis(maximum: int, tick_count: int = 5) -> tuple[int, int]:
     return ceiling, step
 
 
-def history_points(created_at: date, starred_dates: list[date]) -> list[tuple[date, int]]:
-    points: list[tuple[date, int]] = [(created_at, 0)]
-    total = 0
-    for day, count in sorted(Counter(starred_dates).items()):
-        total += count
-        points.append((day, total))
-    return points
-
-
-def render_svg(repository: str, created_at: date, starred_dates: list[date]) -> str:
+def render_svg(
+    repository: str,
+    created_at: date,
+    snapshots: list[tuple[date, int]],
+) -> str:
     width, height = 960, 520
     left, right, top, bottom = 78, 28, 82, 66
     plot_width = width - left - right
     plot_height = height - top - bottom
-    points = history_points(created_at, starred_dates)
-    first_day = min(day for day, _ in points)
-    last_day = max(day for day, _ in points)
+    points = [(created_at, 0), *snapshots]
+    first_day = created_at
+    last_day = snapshots[-1][0]
     day_span = max(1, (last_day - first_day).days)
-    maximum, y_step = y_axis(len(starred_dates))
+    maximum, y_step = y_axis(max(stars for _, stars in points))
 
     def x(day: date) -> float:
         return left + ((day - first_day).days / day_span) * plot_width
@@ -181,10 +202,11 @@ def render_svg(repository: str, created_at: date, starred_dates: list[date]) -> 
         )
 
     safe_repository = escape(repository)
+    latest_stars = snapshots[-1][1]
     last_x, last_y = coordinates[-1]
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">
   <title id="title">Star history for {safe_repository}</title>
-  <desc id="description">{len(starred_dates)} stars since {created_at.isoformat()}</desc>
+  <desc id="description">{latest_stars} stars as of {last_day.isoformat()}</desc>
   <defs>
     <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#2f81f7" stop-opacity="0.42"/>
@@ -199,7 +221,7 @@ def render_svg(repository: str, created_at: date, starred_dates: list[date]) -> 
   </style>
   <rect width="100%" height="100%" rx="12" fill="#0d1117"/>
   <text x="{left}" y="36" class="title">Star History</text>
-  <text x="{left}" y="60" class="subtitle">{safe_repository} · {len(starred_dates)} stars</text>
+  <text x="{left}" y="60" class="subtitle">{safe_repository} · {latest_stars} stars · daily snapshots</text>
   {''.join(y_grid)}
   {''.join(x_grid)}
   <polygon points="{area_points}" fill="url(#area)"/>
@@ -213,29 +235,69 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--repository",
-        default=os.environ.get("GITHUB_REPOSITORY", "Roboparty/roboto_origin"),
+        default="Roboparty/roboto_origin",
         help="GitHub repository in OWNER/REPO form",
+    )
+    parser.add_argument(
+        "--history",
+        default=".github/data/star-history.json",
+        help="Daily snapshot JSON file to update",
     )
     parser.add_argument(
         "--output", default="assets/star-history.svg", help="SVG output path"
     )
+    parser.add_argument(
+        "--current-stars",
+        type=int,
+        help="Override the public API count for deterministic tests",
+    )
+    parser.add_argument(
+        "--today", help="Override the UTC snapshot date for deterministic tests"
+    )
     args = parser.parse_args()
 
-    token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        print("GITHUB_TOKEN is required", file=sys.stderr)
-        return 2
+    history_path = Path(args.history)
+    output_path = Path(args.output)
+    created_at, snapshots = load_history(history_path, args.repository)
 
-    created_at, starred_dates = fetch_history(args.repository, token)
-    svg = render_svg(args.repository, created_at, starred_dates)
-    output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = output.with_suffix(output.suffix + ".tmp")
-    temporary.write_text(svg, encoding="utf-8", newline="\n")
-    temporary.replace(output)
-    print(f"Wrote {output} with {len(starred_dates)} stars")
+    if args.current_stars is None:
+        metadata = request_repository(args.repository)
+        current_stars = int(metadata["stargazers_count"])
+        repository_created_at = datetime.fromisoformat(
+            metadata["created_at"].replace("Z", "+00:00")
+        ).date()
+        if repository_created_at != created_at:
+            raise RuntimeError(
+                f"Stored creation date {created_at} does not match GitHub "
+                f"metadata {repository_created_at}"
+            )
+    else:
+        current_stars = args.current_stars
+
+    snapshot_day = (
+        parse_date(args.today)
+        if args.today
+        else datetime.now(timezone.utc).date()
+    )
+    snapshots = update_history(snapshots, snapshot_day, current_stars)
+    write_history(history_path, args.repository, created_at, snapshots)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        render_svg(args.repository, created_at, snapshots),
+        encoding="utf-8",
+        newline="\n",
+    )
+    print(
+        f"Wrote {output_path} and {history_path} with "
+        f"{current_stars} stars for {snapshot_day}"
+    )
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except RuntimeError as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(1) from error
