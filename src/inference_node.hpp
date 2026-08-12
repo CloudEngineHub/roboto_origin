@@ -20,6 +20,7 @@
 #include <iostream>
 #include <queue>
 #include <sstream>
+#include <thread>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -27,6 +28,7 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/float32_multi_array.hpp> 
 #include "utils/motion_loader.hpp"
+#include "utils/latent_loader.hpp"
 #include <std_srvs/srv/trigger.hpp>
 #include "robot_interface.hpp"
 
@@ -92,6 +94,7 @@ class InferenceNode : public rclcpp::Node {
         ObsStackOrder stack_order = ObsStackOrder::FrameMajor;
         std::unique_ptr<ModelContext> ctx;
         std::shared_ptr<MotionLoader> motion_loader;
+        std::unique_ptr<LatentLoader> latent_loader;
         size_t motion_frame = 0;
         bool is_first_frame = true;
     };
@@ -184,6 +187,10 @@ class InferenceNode : public rclcpp::Node {
             "stop_inference", std::bind(&InferenceNode::stop_inference_srv, this, std::placeholders::_1, std::placeholders::_2));
     }
     ~InferenceNode() {
+        is_running_.store(false);
+        if (reset_thread_.joinable()) {
+            reset_thread_.join();
+        }
         if (inference_thread_.joinable()) {
             inference_thread_.join();
         }
@@ -191,7 +198,7 @@ class InferenceNode : public rclcpp::Node {
             control_thread_.join();
         }
         reset_runtime_state();
-        if(robot_){
+        if (robot_) {
             robot_.reset();
         }
     }
@@ -220,11 +227,15 @@ class InferenceNode : public rclcpp::Node {
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr clear_depth_history_client_;
     std::thread inference_thread_;
     std::thread control_thread_;
+    std::thread reset_thread_;
+    std::mutex reset_thread_mutex_;
+    bool reset_thread_running_ = false;
     float act_alpha_;
     float dt_;
     float obs_scales_lin_vel_, obs_scales_ang_vel_, obs_scales_dof_pos_, obs_scales_dof_vel_,
         obs_scales_gravity_b_, clip_observations_;
     float clip_actions_;
+    float action_rescale_ = 1.0f;
     std::vector<double> action_scale_, clip_cmd_, joint_default_angle_, joint_limits_;
     std::vector<long int> usd2urdf_;
     float gravity_z_upper_;
@@ -245,8 +256,8 @@ class InferenceNode : public rclcpp::Node {
     void inference();
     void control();
     void apply_action();
+    bool start_joint_reset();
     PolicyRuntime& active_policy();
-    const PolicyRuntime& active_policy() const;
 
     void load_config();
     void setup_model(std::unique_ptr<ModelContext>& ctx, std::string model_path, int input_size);
@@ -290,6 +301,7 @@ class InferenceNode : public rclcpp::Node {
     void get_perception_obs(std::vector<float>& segment);
     void get_motion_pos_obs(std::vector<float>& segment);
     void get_motion_vel_obs(std::vector<float>& segment);
+    void get_latent_obs(std::vector<float>& segment);
 
     void init_motors_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                          std::shared_ptr<std_srvs::srv::Trigger::Response> response);
