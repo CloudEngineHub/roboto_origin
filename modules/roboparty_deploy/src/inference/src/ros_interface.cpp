@@ -3,16 +3,26 @@
 
 #include "inference_node.hpp"
 
+#include <limits>
+
 void InferenceNode::load_config() {
+    const std::string default_robot_dir = std::string(ROOT_DIR) + "robots/rpo";
+    this->declare_parameter<std::string>("robot_name", "rpo");
+    this->declare_parameter<std::string>("policy_name", "default");
+    this->declare_parameter<std::string>("robot_config", default_robot_dir + "/robot.yaml");
+    this->declare_parameter<std::string>("model_dir", default_robot_dir + "/models");
+    this->declare_parameter<std::string>("motion_dir", default_robot_dir + "/motions");
+    this->declare_parameter<std::string>("latent_dir", default_robot_dir + "/latents");
     this->declare_parameter<std::vector<std::string>>("model_names", std::vector<std::string>{});
     this->declare_parameter<std::vector<std::string>>("motion_names", std::vector<std::string>{});
+    this->declare_parameter<std::vector<std::string>>("latent_names", std::vector<std::string>{});
     this->declare_parameter<std::vector<std::string>>("obs_layouts", std::vector<std::string>{});
-    this->declare_parameter<std::vector<std::string>>("extra_obs_layouts", std::vector<std::string>{});
     this->declare_parameter<std::vector<long int>>("frame_stacks", std::vector<long int>{});
     this->declare_parameter<std::vector<std::string>>("obs_stack_orders", std::vector<std::string>{});
     this->declare_parameter<float>("act_alpha", 0.9);
     this->declare_parameter<int>("intra_threads", -1);
     this->declare_parameter<std::string>("perception_obs_topic", "elevation_data");
+    this->declare_parameter<bool>("use_depth", false);
     this->declare_parameter<int>("joint_num", 23);
     this->declare_parameter<int>("decimation", 10);
     this->declare_parameter<float>("dt", 0.001);
@@ -22,28 +32,44 @@ void InferenceNode::load_config() {
     this->declare_parameter<float>("obs_scales_dof_vel", 1.0);
     this->declare_parameter<float>("obs_scales_gravity_b", 1.0);
     this->declare_parameter<float>("clip_observations", 100.0);
-    this->declare_parameter<float>("action_scale", 0.3);
+    this->declare_parameter<std::vector<double>>("action_scale", std::vector<double>{0.3});
     this->declare_parameter<float>("clip_actions", 18.0);
+    this->declare_parameter<double>("action_rescale", 1.0);
     this->declare_parameter<std::vector<long int>>("usd2urdf", std::vector<long int>{});
-    this->declare_parameter<std::vector<double>>("clip_cmd", std::vector<double>{});
+    this->declare_parameter<std::vector<double>>(
+        "clip_cmd", std::vector<double>{-0.4, 0.6, -0.4, 0.4, -0.8, 0.8});
     this->declare_parameter<std::vector<double>>("joint_default_angle", std::vector<double>{});
     this->declare_parameter<std::vector<double>>("joint_limits", std::vector<double>{});
     this->declare_parameter<float>("gravity_z_upper", -0.5);
+    this->declare_parameter<double>("gamma", 0.8);
+    this->declare_parameter<int>("window_size", 1);
     std::vector<std::string> model_names;
     std::vector<std::string> motion_names;
+    std::vector<std::string> latent_names;
     std::vector<std::string> obs_layouts;
-    std::vector<std::string> extra_obs_layouts;
     std::vector<long int> frame_stacks;
     std::vector<std::string> obs_stack_orders;
+    std::string robot_name;
+    std::string policy_name;
+    std::string model_dir;
+    std::string motion_dir;
+    std::string latent_dir;
+    this->get_parameter("robot_name", robot_name);
+    this->get_parameter("policy_name", policy_name);
+    this->get_parameter("robot_config", robot_config_path_);
+    this->get_parameter("model_dir", model_dir);
+    this->get_parameter("motion_dir", motion_dir);
+    this->get_parameter("latent_dir", latent_dir);
     this->get_parameter("model_names", model_names);
     this->get_parameter("motion_names", motion_names);
+    this->get_parameter("latent_names", latent_names);
     this->get_parameter("obs_layouts", obs_layouts);
-    this->get_parameter("extra_obs_layouts", extra_obs_layouts);
     this->get_parameter("frame_stacks", frame_stacks);
     this->get_parameter("obs_stack_orders", obs_stack_orders);
     this->get_parameter("act_alpha", act_alpha_);
     this->get_parameter("intra_threads", intra_threads_);
     this->get_parameter("perception_obs_topic", perception_obs_topic_);
+    this->get_parameter("use_depth", use_depth_);
     this->get_parameter("joint_num", joint_num_);
     this->get_parameter("decimation", decimation_);
     this->get_parameter("dt", dt_);
@@ -54,12 +80,30 @@ void InferenceNode::load_config() {
     this->get_parameter("obs_scales_gravity_b", obs_scales_gravity_b_);
     this->get_parameter("clip_observations", clip_observations_);
     this->get_parameter("action_scale", action_scale_);
+    double action_rescale = 1.0;
+    this->get_parameter("action_rescale", action_rescale);
+    action_rescale_ = static_cast<float>(action_rescale);
+    if (joint_num_ <= 0) {
+        throw std::runtime_error("joint_num must be greater than zero");
+    }
+    if (action_scale_.size() == 1) {
+        action_scale_.resize(static_cast<std::size_t>(joint_num_), action_scale_.front());
+    } else if (action_scale_.size() != static_cast<std::size_t>(joint_num_)) {
+        throw std::runtime_error(
+            "action_scale must contain either 1 value or " +
+            std::to_string(joint_num_) + " values, but got " +
+            std::to_string(action_scale_.size()));
+    }
     this->get_parameter("clip_actions", clip_actions_);
     this->get_parameter("usd2urdf", usd2urdf_);
     this->get_parameter("clip_cmd", clip_cmd_);
     this->get_parameter("joint_default_angle", joint_default_angle_);
     this->get_parameter("joint_limits", joint_limits_);
     this->get_parameter("gravity_z_upper", gravity_z_upper_);
+    double latent_gamma = 0.8;
+    this->get_parameter("gamma", latent_gamma);
+    int latent_window_size = 1;
+    this->get_parameter("window_size", latent_window_size);
 
     policies_.clear();
     motion_policy_indices_.clear();
@@ -79,56 +123,146 @@ void InferenceNode::load_config() {
         }
     };
     require_policy_count(obs_layouts, "obs_layouts");
-    require_empty_or_policy_count(extra_obs_layouts, "extra_obs_layouts");
     require_policy_count(frame_stacks, "frame_stacks");
     require_policy_count(obs_stack_orders, "obs_stack_orders");
     require_empty_or_policy_count(motion_names, "motion_names");
+    require_empty_or_policy_count(latent_names, "latent_names");
+
+    const auto resolve_asset_path = [](const std::string& base_dir, const std::string& asset_name) {
+        const std::filesystem::path asset_path(asset_name);
+        if (asset_path.is_absolute()) {
+            return asset_path.string();
+        }
+        return (std::filesystem::path(base_dir) / asset_path).lexically_normal().string();
+    };
 
     for (size_t i = 0; i < policy_count; i++) {
         const std::string& policy_model_name = model_names[i];
         const std::string policy_motion_name = motion_names.empty() ? "" : motion_names[i];
-        const std::string policy_extra_obs_layout = extra_obs_layouts.empty() ? "" : extra_obs_layouts[i];
-        const int policy_frame_stack = static_cast<int>(frame_stacks[i]);
-        const std::string& policy_obs_stack_order_name = obs_stack_orders[i];
+        const std::string policy_latent_name = latent_names.empty() ? "" : latent_names[i];
+        const long int policy_frame_stack = frame_stacks[i];
         if (policy_model_name.empty()) {
             throw std::runtime_error("model_names[" + std::to_string(i) + "] must not be empty");
         }
-        if (policy_frame_stack <= 0) {
-            throw std::runtime_error("frame_stacks[" + std::to_string(i) + "] must be positive");
+        if (policy_frame_stack <= 0 ||
+            policy_frame_stack > static_cast<long int>(std::numeric_limits<int>::max())) {
+            throw std::runtime_error(
+                "frame_stacks[" + std::to_string(i) + "] must be a positive 32-bit integer");
         }
-
         PolicyRuntime policy;
         policy.name = policy_model_name;
-        policy.model_path = std::string(ROOT_DIR) + "models/" + policy_model_name;
+        policy.model_path = resolve_asset_path(model_dir, policy_model_name);
+        policy.frame_stack = static_cast<int>(policy_frame_stack);
+        policy.stack_order = parse_obs_stack_order(obs_stack_orders[i]);
         if (!policy_motion_name.empty()) {
-            policy.motion_path = std::string(ROOT_DIR) + "motions/" + policy_motion_name;
+            policy.motion_path = resolve_asset_path(motion_dir, policy_motion_name);
+        }
+        if (!policy_latent_name.empty()) {
+            policy.latent_loader = std::make_unique<LatentLoader>(
+                resolve_asset_path(latent_dir, policy_latent_name),
+                static_cast<float>(latent_gamma), latent_window_size);
         }
         policy.obs_layout = parse_obs_layout(obs_layouts[i], "obs_layouts[" + std::to_string(i) + "]");
         policy.obs_layout_sizes.reserve(policy.obs_layout.size());
+        bool has_sparse_history = false;
         for (const ObsSourceSpec& source : policy.obs_layout) {
+            if (source.size > std::numeric_limits<int>::max() - policy.obs_num) {
+                throw std::runtime_error("obs_layouts[" + std::to_string(i) + "] is too large");
+            }
             policy.obs_layout_sizes.push_back(source.size);
             policy.obs_num += source.size;
             if (source.name == "perception") {
                 perception_obs_num_ = source.size;
             }
-        }
-        if (!policy_extra_obs_layout.empty()) {
-            policy.extra_obs_layout = parse_obs_layout(policy_extra_obs_layout, "extra_obs_layouts[" + std::to_string(i) + "]");
-            for (const ObsSourceSpec& source : policy.extra_obs_layout) {
-                policy.extra_obs_num += source.size;
-                if (source.name == "perception") {
-                    perception_obs_num_ = source.size;
+            if (!source.history_taps.empty()) {
+                has_sparse_history = true;
+                const auto invalid_tap = std::find_if(
+                    source.history_taps.begin(), source.history_taps.end(),
+                    [&policy](int tap) { return tap >= policy.frame_stack; });
+                if (invalid_tap != source.history_taps.end()) {
+                    throw std::runtime_error(
+                        "obs_layouts[" + std::to_string(i) + "] history tap " +
+                        std::to_string(*invalid_tap) + " for source '" +
+                        source.name + "' must be smaller than frame_stacks[" +
+                        std::to_string(i) + "]");
+                }
+                if (policy.stack_order == ObsStackOrder::FrameMajor &&
+                    std::adjacent_find(
+                        source.history_taps.begin(), source.history_taps.end(),
+                        [](int previous, int next) { return previous <= next; }) !=
+                        source.history_taps.end()) {
+                    throw std::runtime_error(
+                        "obs_layouts[" + std::to_string(i) +
+                        "] history taps for source '" + source.name +
+                        "' must be strictly descending for frame_major");
                 }
             }
         }
-        policy.frame_stack = policy_frame_stack;
-        policy.stack_order = parse_obs_stack_order(policy_obs_stack_order_name);
+
+        const long long dense_history_num =
+            static_cast<long long>(policy.obs_num) * policy.frame_stack;
+        if (dense_history_num > static_cast<long long>(std::numeric_limits<int>::max())) {
+            throw std::runtime_error(
+                "obs_layouts[" + std::to_string(i) + "] history buffer is too large");
+        }
+        policy.obs_input_num = static_cast<int>(dense_history_num);
+
+        if (has_sparse_history) {
+            size_t input_offset = 0;
+            const auto append_history_slice =
+                [&policy, &input_offset](size_t obs_offset,
+                                         const ObsSourceSpec& source,
+                                         int tap) {
+                    const size_t frame = static_cast<size_t>(policy.frame_stack - 1 - tap);
+                    policy.history_gather_plan.push_back({
+                        frame * static_cast<size_t>(policy.obs_num) + obs_offset,
+                        static_cast<size_t>(source.size),
+                    });
+                    input_offset += static_cast<size_t>(source.size);
+                };
+
+            if (policy.stack_order == ObsStackOrder::ObsMajor) {
+                size_t obs_offset = 0;
+                for (const ObsSourceSpec& source : policy.obs_layout) {
+                    if (source.history_taps.empty()) {
+                        for (int tap = policy.frame_stack - 1; tap >= 0; tap--) {
+                            append_history_slice(obs_offset, source, tap);
+                        }
+                    } else {
+                        for (const int tap : source.history_taps) {
+                            append_history_slice(obs_offset, source, tap);
+                        }
+                    }
+                    obs_offset += static_cast<size_t>(source.size);
+                }
+            } else {
+                for (int tap = policy.frame_stack - 1; tap >= 0; tap--) {
+                    size_t obs_offset = 0;
+                    for (const ObsSourceSpec& source : policy.obs_layout) {
+                        if (source.history_taps.empty() ||
+                            std::find(source.history_taps.begin(),
+                                      source.history_taps.end(), tap) !=
+                                source.history_taps.end()) {
+                            append_history_slice(obs_offset, source, tap);
+                        }
+                        obs_offset += static_cast<size_t>(source.size);
+                    }
+                }
+            }
+            policy.obs_input_num = static_cast<int>(input_offset);
+        }
         if (!policy.motion_path.empty()) {
             motion_policy_indices_.push_back(static_cast<int>(policies_.size()));
         }
         policies_.push_back(std::move(policy));
     }
 
+    RCLCPP_INFO(this->get_logger(), "robot_name: %s", robot_name.c_str());
+    RCLCPP_INFO(this->get_logger(), "policy_name: %s", policy_name.c_str());
+    RCLCPP_INFO(this->get_logger(), "robot_config: %s", robot_config_path_.c_str());
+    RCLCPP_INFO(this->get_logger(), "model_dir: %s", model_dir.c_str());
+    RCLCPP_INFO(this->get_logger(), "motion_dir: %s", motion_dir.c_str());
+    RCLCPP_INFO(this->get_logger(), "latent_dir: %s", latent_dir.c_str());
     for(size_t i = 0; i < policies_.size(); i++) {
         RCLCPP_INFO(this->get_logger(), "policy %zu: %s", i, policies_[i].name.c_str());
         RCLCPP_INFO(this->get_logger(), "policy_model_path %zu: %s", i, policies_[i].model_path.c_str());
@@ -141,8 +275,8 @@ void InferenceNode::load_config() {
     RCLCPP_INFO(this->get_logger(), "supports_interrupt: %s", has_obs_source("interrupt") ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "has_motion_policy: %s", motion_policy_indices_.empty() ? "false" : "true");
     RCLCPP_INFO(this->get_logger(), "perception_obs_num: %d", perception_obs_num_);
-    print_vector<std::string>("extra_obs_layouts", extra_obs_layouts);
     RCLCPP_INFO(this->get_logger(), "perception_obs_topic: %s", perception_obs_topic_.c_str());
+    RCLCPP_INFO(this->get_logger(), "use_depth: %s", use_depth_ ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "joint_num: %d", joint_num_);
     RCLCPP_INFO(this->get_logger(), "decimation: %d", decimation_);
     RCLCPP_INFO(this->get_logger(), "dt: %f", dt_);
@@ -151,7 +285,7 @@ void InferenceNode::load_config() {
     RCLCPP_INFO(this->get_logger(), "obs_scales_dof_pos: %f", obs_scales_dof_pos_);
     RCLCPP_INFO(this->get_logger(), "obs_scales_dof_vel: %f", obs_scales_dof_vel_);
     RCLCPP_INFO(this->get_logger(), "obs_scales_gravity_b: %f", obs_scales_gravity_b_);
-    RCLCPP_INFO(this->get_logger(), "action_scale: %f", action_scale_);
+    print_vector<double>("action_scale", action_scale_);
     RCLCPP_INFO(this->get_logger(), "clip_actions: %f", clip_actions_);
     print_vector<long int>("usd2urdf", usd2urdf_);
     print_vector<double>("clip_cmd", clip_cmd_);
@@ -174,16 +308,20 @@ void InferenceNode::subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Jo
         }
     }
     if ((msg->buttons[2] == 1 && msg->buttons[2] != last_button0_)) {
-        if(is_running_.load()){
+        if (is_running_.load()){
             reset_runtime_state();
             RCLCPP_INFO(this->get_logger(), "Inference paused");
         }
-        if (robot_->is_init_.load()){
-            robot_->deinit_motors();
-            RCLCPP_INFO(this->get_logger(), "Motors deinitialized");
-        } else {
-            robot_->init_motors();
-            RCLCPP_INFO(this->get_logger(), "Motors initialized");
+        try {
+            if (robot_->is_init_.load()){
+                robot_->deinit_motors();
+                RCLCPP_INFO(this->get_logger(), "Motors deinitialized");
+            } else {
+                robot_->init_motors();
+                RCLCPP_INFO(this->get_logger(), "Motors initialized");
+            }
+        } catch (const std::exception& e) {
+            RCLCPP_WARN(this->get_logger(), "Failed to change motor state: %s", e.what());
         }
     }
     if (msg->buttons[0] == 1 && msg->buttons[0] != last_button1_) {
@@ -191,16 +329,24 @@ void InferenceNode::subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Jo
             reset_runtime_state();
             RCLCPP_INFO(this->get_logger(), "Inference paused");
         }
-        if (!robot_->is_init_.load()){
-            RCLCPP_INFO(this->get_logger(), "Motors are not initialized!");
-        } else {
-            robot_->reset_joints(joint_default_angle_);
-            RCLCPP_INFO(this->get_logger(), "Motors reset");
+        try {
+            if (!start_joint_reset()) {
+                RCLCPP_WARN(this->get_logger(), "Motor reset is already in progress");
+            }
+        } catch (const std::exception& e) {
+            RCLCPP_WARN(this->get_logger(), "Failed to start motor reset: %s", e.what());
         }
     }
     if (msg->buttons[1] == 1 && msg->buttons[1] != last_button2_) {
-        is_running_.store(!is_running_.load());
-        RCLCPP_INFO(this->get_logger(), "Inference %s", is_running_.load() ? "started" : "paused");
+        if (is_running_.load()) {
+            is_running_.store(false);
+            RCLCPP_INFO(this->get_logger(), "Inference paused");
+        } else if (!robot_->is_init_.load()) {
+            RCLCPP_WARN(this->get_logger(), "Motors are not initialized, cannot start inference");
+        } else {
+            is_running_.store(true);
+            RCLCPP_INFO(this->get_logger(), "Inference started");
+        }
     }
     if (msg->buttons[3] == 1 && msg->buttons[3] != last_button3_) {
         is_joy_control_.store(!is_joy_control_);
@@ -275,7 +421,7 @@ void InferenceNode::subs_cmd_callback(const std::shared_ptr<geometry_msgs::msg::
     }
 }
 
-void InferenceNode::subs_elevation_callback(const std::shared_ptr<std_msgs::msg::Float32MultiArray> msg){
+void InferenceNode::subs_perception_callback(const std::shared_ptr<std_msgs::msg::Float32MultiArray> msg){
     if(perception_obs_num_ > 0){
         std::unique_lock<std::mutex> lock(perception_mutex_);
         if (msg->data.size() < perception_obs_buffer_.size()) {
@@ -296,22 +442,64 @@ void InferenceNode::subs_joint_state_callback(const std::shared_ptr<sensor_msgs:
     }
 }
 
-void InferenceNode::reset_joints_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
-                                     std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (is_running_.load()) {
-        response->success = false;
-        response->message = "Inference is running, cannot reset joints.";
-        return;
+bool InferenceNode::start_joint_reset() {
+    std::unique_lock<std::mutex> lock(reset_thread_mutex_);
+    if (reset_thread_running_) {
+        return false;
     }
     if (!robot_->is_init_.load()) {
-        response->success = false;
-        response->message = "Motors are not initialized, cannot reset joints.";
-        return;
+        throw std::runtime_error("Motors are not initialized");
     }
+    if (reset_thread_.joinable()) {
+        reset_thread_.join();
+    }
+
+    reset_thread_running_ = true;
     try {
-        robot_->reset_joints(joint_default_angle_);
+        reset_thread_ = std::thread([
+            this, robot = robot_, joint_default_angle = joint_default_angle_, logger = this->get_logger()
+        ]() {
+            try {
+                robot->reset_joints(joint_default_angle);
+                if (robot->is_init_.load()) {
+                    RCLCPP_INFO(logger, "Motors reset");
+                } else {
+                    RCLCPP_INFO(logger, "Motor reset interrupted by deinitialization");
+                }
+            } catch (const std::exception& e) {
+                if (robot->is_init_.load()) {
+                    RCLCPP_WARN(logger, "Failed to reset motors: %s", e.what());
+                } else {
+                    RCLCPP_INFO(logger, "Motor reset interrupted by deinitialization");
+                }
+            } catch (...) {
+                RCLCPP_ERROR(logger, "Motor reset failed with an unknown exception");
+            }
+
+            std::lock_guard<std::mutex> state_lock(reset_thread_mutex_);
+            reset_thread_running_ = false;
+        });
+    } catch (...) {
+        reset_thread_running_ = false;
+        throw;
+    }
+    return true;
+}
+
+void InferenceNode::reset_joints_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                     std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+    try {
+        if (is_running_.load()){
+            reset_runtime_state();
+            RCLCPP_INFO(this->get_logger(), "Inference paused");
+        }
+        if (!start_joint_reset()) {
+            response->success = false;
+            response->message = "Joint reset is already in progress";
+            return;
+        }
         response->success = true;
-        response->message = "Joints reset successfully";
+        response->message = "Joint reset started";
     } catch (const std::exception& e) {
         response->success = false;
         response->message = e.what();
@@ -320,15 +508,10 @@ void InferenceNode::reset_joints_srv(const std::shared_ptr<std_srvs::srv::Trigge
 
 void InferenceNode::refresh_joints_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                      std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (!robot_->is_init_.load()) {
-        response->success = false;
-        response->message = "Motors are not initialized, cannot refresh motors.";
-        return;
-    }
     try {
         robot_->refresh_joints();
         response->success = true;
-        response->message = "Motors refresh successfully";
+        response->message = "Motors refreshed successfully";
     } catch (const std::exception& e) {
         response->success = false;
         response->message = e.what();
@@ -337,12 +520,8 @@ void InferenceNode::refresh_joints_srv(const std::shared_ptr<std_srvs::srv::Trig
 
 void InferenceNode::read_joints_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                      std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (!robot_->is_init_.load()) {
-        response->success = false;
-        response->message = "Motors are not initialized, cannot read joints.";
-        return;
-    }
     try {
+        robot_->read_joints();
         response->success = true;
         response->message = "Joints read successfully";
         publish_joint_states();
@@ -354,12 +533,8 @@ void InferenceNode::read_joints_srv(const std::shared_ptr<std_srvs::srv::Trigger
 
 void InferenceNode::read_imu_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                  std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (!robot_) {
-        response->success = false;
-        response->message = "IMU is not initialized, cannot read IMU.";
-        return;
-    }
     try {
+        robot_->read_imu();
         response->success = true;
         response->message = "IMU read successfully";
         publish_imu();
@@ -371,14 +546,9 @@ void InferenceNode::read_imu_srv(const std::shared_ptr<std_srvs::srv::Trigger::R
 
 void InferenceNode::set_zeros_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                   std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (!robot_->is_init_.load()) {
-        response->success = false;
-        response->message = "Motors are not initialized, cannot set zeros.";
-        return;
-    }
     if (is_running_.load()) {
         response->success = false;
-        response->message = "Inference is running, cannot set zeros.";
+        response->message = "Inference is running, cannot set zeros";
         return;
     }
     try {
@@ -393,11 +563,6 @@ void InferenceNode::set_zeros_srv(const std::shared_ptr<std_srvs::srv::Trigger::
 
 void InferenceNode::clear_errors_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                      std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (!robot_) {
-        response->success = false;
-        response->message = "Robot interface is not initialized, cannot clear errors.";
-        return;
-    }
     try {
         robot_->clear_errors();
         response->success = true;
@@ -410,11 +575,6 @@ void InferenceNode::clear_errors_srv(const std::shared_ptr<std_srvs::srv::Trigge
 
 void InferenceNode::init_motors_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                     std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (robot_->is_init_.load()) {
-        response->success = false;
-        response->message = "Motors are already initialized, cannot init motors.";
-        return;
-    }
     try {
         robot_->init_motors();
         response->success = true;
@@ -427,12 +587,11 @@ void InferenceNode::init_motors_srv(const std::shared_ptr<std_srvs::srv::Trigger
 
 void InferenceNode::deinit_motors_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                       std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-    if (!robot_->is_init_.load()) {
-        response->success = false;
-        response->message = "Motors are not initialized, cannot deinit motors.";
-        return;
-    }
     try {
+        if (is_running_.load()){
+            reset_runtime_state();
+            RCLCPP_INFO(this->get_logger(), "Inference paused");
+        }
         robot_->deinit_motors();
         response->success = true;
         response->message = "Motors deinitialized successfully";
@@ -446,7 +605,13 @@ void InferenceNode::start_inference_srv(const std::shared_ptr<std_srvs::srv::Tri
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
     if (is_running_.load()) {
         response->success = false;
-        response->message = "Inference is already running!";
+        response->message = "Inference is already running";
+        return;
+    }
+    if (!robot_->is_init_.load()) {
+        response->success = false;
+        response->message = "Motors are not initialized, cannot start inference";
+        RCLCPP_WARN(this->get_logger(), "%s", response->message.c_str());
         return;
     }
     is_running_.store(true);
@@ -458,7 +623,7 @@ void InferenceNode::stop_inference_srv(const std::shared_ptr<std_srvs::srv::Trig
                                        std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
     if (!is_running_.load()) {
         response->success = false;
-        response->message = "Inference is already stopped!";
+        response->message = "Inference is already stopped";
         return;
     }
     is_running_.store(false);
@@ -482,23 +647,26 @@ void InferenceNode::publish_joint_states() {
 
 void InferenceNode::publish_action() {
     action_msg_.header.stamp = this->now();
-    for (int i = 0; i < joint_num_; i++) {
-        action_msg_.position[i] = act_[i];
+    {
+        std::unique_lock<std::mutex> lock(act_mutex_);
+        for (int i = 0; i < joint_num_; i++) {
+            action_msg_.position[i] = act_[i];
+        }
     }
     action_publisher_->publish(action_msg_);
 }
 
 void InferenceNode::publish_imu() {
-    quat_buffer_ = robot_->get_quat();
-    ang_vel_buffer_ = robot_->get_ang_vel();
+    const auto quat = robot_->get_quat();
+    const auto ang_vel = robot_->get_ang_vel();
     auto msg = sensor_msgs::msg::Imu();
     msg.header.stamp = this->now();
-    msg.orientation.w = quat_buffer_[0];
-    msg.orientation.x = quat_buffer_[1];
-    msg.orientation.y = quat_buffer_[2];
-    msg.orientation.z = quat_buffer_[3];
-    msg.angular_velocity.x = ang_vel_buffer_[0];
-    msg.angular_velocity.y = ang_vel_buffer_[1];
-    msg.angular_velocity.z = ang_vel_buffer_[2];
+    msg.orientation.w = quat[0];
+    msg.orientation.x = quat[1];
+    msg.orientation.y = quat[2];
+    msg.orientation.z = quat[3];
+    msg.angular_velocity.x = ang_vel[0];
+    msg.angular_velocity.y = ang_vel[1];
+    msg.angular_velocity.z = ang_vel[2];
     imu_publisher_->publish(msg);
 }

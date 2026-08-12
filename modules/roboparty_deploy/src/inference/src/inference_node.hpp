@@ -20,6 +20,7 @@
 #include <iostream>
 #include <queue>
 #include <sstream>
+#include <thread>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -27,6 +28,7 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/float32_multi_array.hpp> 
 #include "utils/motion_loader.hpp"
+#include "utils/latent_loader.hpp"
 #include <std_srvs/srv/trigger.hpp>
 #include "robot_interface.hpp"
 
@@ -46,6 +48,13 @@ struct ObsSourceSpec {
     std::string name;
     const ObsSourceDefinition* source;
     int size;
+    // Empty keeps legacy contiguous stacking; otherwise values are explicit inference-tick lags.
+    std::vector<int> history_taps;
+};
+
+struct ObsHistorySlice {
+    size_t history_offset;
+    size_t size;
 };
 
 class InferenceNode : public rclcpp::Node {
@@ -75,14 +84,17 @@ class InferenceNode : public rclcpp::Node {
         std::vector<int> obs_layout_sizes;
         std::vector<std::vector<float>> obs_segments;
         std::vector<float> obs;
-        std::vector<ObsSourceSpec> extra_obs_layout;
-        std::vector<std::vector<float>> extra_obs_segments;
+        // Sparse mode only: complete frames ordered from oldest to newest.
+        std::vector<float> obs_history;
+        // Non-empty selects sparse mode and describes sequential copies into the model input.
+        std::vector<ObsHistorySlice> history_gather_plan;
         int obs_num = 0;
-        int extra_obs_num = 0;
+        int obs_input_num = 0;
         int frame_stack = 1;
         ObsStackOrder stack_order = ObsStackOrder::FrameMajor;
         std::unique_ptr<ModelContext> ctx;
         std::shared_ptr<MotionLoader> motion_loader;
+        std::unique_ptr<LatentLoader> latent_loader;
         size_t motion_frame = 0;
         bool is_first_frame = true;
     };
@@ -90,7 +102,7 @@ class InferenceNode : public rclcpp::Node {
     InferenceNode() : Node("inference_node") {
         load_config();
 
-        robot_ = std::make_shared<RobotInterface>(std::string(ROOT_DIR) + "config/robot.yaml");
+        robot_ = std::make_shared<RobotInterface>(robot_config_path_);
 
         Ort::ThreadingOptions thread_opts;
         if (intra_threads_ > 0) {
@@ -107,9 +119,10 @@ class InferenceNode : public rclcpp::Node {
             for (size_t j = 0; j < policy.obs_layout.size(); j++) {
                 policy.obs_segments[j].resize(policy.obs_layout[j].size, 0.0f);
             }
-            policy.extra_obs_segments.resize(policy.extra_obs_layout.size());
-            for (size_t j = 0; j < policy.extra_obs_layout.size(); j++) {
-                policy.extra_obs_segments[j].resize(policy.extra_obs_layout[j].size, 0.0f);
+            if (!policy.history_gather_plan.empty()) {
+                policy.obs_history.resize(
+                    static_cast<size_t>(policy.obs_num) * static_cast<size_t>(policy.frame_stack),
+                    0.0f);
             }
             if (!policy.motion_path.empty()) {
                 policy.motion_loader = std::make_shared<MotionLoader>(policy.motion_path);
@@ -120,8 +133,7 @@ class InferenceNode : public rclcpp::Node {
                     throw std::runtime_error("Motion joint count mismatch: " + policy.motion_path);
                 }
             }
-            setup_model(policy.ctx, policy.model_path,
-                        policy.obs_num * policy.frame_stack + policy.extra_obs_num);
+            setup_model(policy.ctx, policy.model_path, policy.obs_input_num);
         }
         initialize_runtime_state();
         reset_runtime_state();
@@ -132,9 +144,15 @@ class InferenceNode : public rclcpp::Node {
         cmd_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
             "/cmd_vel", data_qos, std::bind(&InferenceNode::subs_cmd_callback,this, std::placeholders::_1
         ));
-        elevation_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-            perception_obs_topic_, data_qos,
-            std::bind(&InferenceNode::subs_elevation_callback, this, std::placeholders::_1));
+        if (has_obs_source("perception")) {
+            perception_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+                perception_obs_topic_, data_qos,
+                std::bind(&InferenceNode::subs_perception_callback, this, std::placeholders::_1));
+        }
+        if (use_depth_) {
+            clear_depth_history_client_ =
+                this->create_client<std_srvs::srv::Trigger>("clear_depth_history");
+        }
         joint_state_subscription_ = this->create_subscription<sensor_msgs::msg::JointState>(
             "/joint_ref_states", data_qos,
             std::bind(&InferenceNode::subs_joint_state_callback, this, std::placeholders::_1));
@@ -169,6 +187,10 @@ class InferenceNode : public rclcpp::Node {
             "stop_inference", std::bind(&InferenceNode::stop_inference_srv, this, std::placeholders::_1, std::placeholders::_2));
     }
     ~InferenceNode() {
+        is_running_.store(false);
+        if (reset_thread_.joinable()) {
+            reset_thread_.join();
+        }
         if (inference_thread_.joinable()) {
             inference_thread_.join();
         }
@@ -176,7 +198,7 @@ class InferenceNode : public rclcpp::Node {
             control_thread_.join();
         }
         reset_runtime_state();
-        if(robot_){
+        if (robot_) {
             robot_.reset();
         }
     }
@@ -185,29 +207,36 @@ class InferenceNode : public rclcpp::Node {
    private:
     std::shared_ptr<RobotInterface> robot_;
     std::atomic<bool> is_running_{false}, is_joy_control_{true}, is_interrupt_{false}, is_motion_policy_{false};
+    std::string robot_config_path_;
     std::string perception_obs_topic_;
     size_t current_motion_policy_idx_ = 0;
     int active_policy_idx_ = 0;
     int perception_obs_num_, joint_num_;
+    bool use_depth_ = false;
     int decimation_;
     std::unique_ptr<Ort::Env> env_;
     int intra_threads_;
     Ort::AllocatorWithDefaultOptions allocator_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscription_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_subscription_;
-    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr elevation_subscription_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr perception_subscription_;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_subscription_;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr action_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr clear_depth_history_client_;
     std::thread inference_thread_;
     std::thread control_thread_;
+    std::thread reset_thread_;
+    std::mutex reset_thread_mutex_;
+    bool reset_thread_running_ = false;
     float act_alpha_;
     float dt_;
     float obs_scales_lin_vel_, obs_scales_ang_vel_, obs_scales_dof_pos_, obs_scales_dof_vel_,
         obs_scales_gravity_b_, clip_observations_;
-    float action_scale_, clip_actions_;
-    std::vector<double> clip_cmd_, joint_default_angle_, joint_limits_;
+    float clip_actions_;
+    float action_rescale_ = 1.0f;
+    std::vector<double> action_scale_, clip_cmd_, joint_default_angle_, joint_limits_;
     std::vector<long int> usd2urdf_;
     float gravity_z_upper_;
     int last_button0_ = 0, last_button1_ = 0, last_button2_ = 0, last_button3_ = 0, last_button4_ = 0, last_button5_ = 0;
@@ -215,20 +244,20 @@ class InferenceNode : public rclcpp::Node {
     std::vector<int> motion_policy_indices_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_joints_service_, set_zeros_service_, clear_errors_service_, refresh_joints_service_, read_joints_service_, read_imu_service_, init_motors_service_, deinit_motors_service_, start_inference_service_, stop_inference_service_;
 
-    std::mutex act_mutex_, perception_mutex_, interrupt_mutex_, cmd_mutex_, mode_mutex_, lb_switch_mutex_;
+    std::mutex act_mutex_, perception_mutex_, interrupt_mutex_, cmd_mutex_, mode_mutex_, control_mutex_, lb_switch_mutex_;
     std::vector<float> act_, last_act_, cmd_vel_, interrupt_action_, perception_obs_buffer_;
     std::vector<float> joint_pos_buffer_, joint_vel_buffer_, joint_torques_buffer_, quat_buffer_, ang_vel_buffer_;
     sensor_msgs::msg::JointState joint_state_msg_, action_msg_;
 
     void subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Joy> msg);
     void subs_cmd_callback(const std::shared_ptr<geometry_msgs::msg::Twist> msg);
-    void subs_elevation_callback(const std::shared_ptr<std_msgs::msg::Float32MultiArray> msg);
+    void subs_perception_callback(const std::shared_ptr<std_msgs::msg::Float32MultiArray> msg);
     void subs_joint_state_callback(const std::shared_ptr<sensor_msgs::msg::JointState> msg);
     void inference();
     void control();
     void apply_action();
+    bool start_joint_reset();
     PolicyRuntime& active_policy();
-    const PolicyRuntime& active_policy() const;
 
     void load_config();
     void setup_model(std::unique_ptr<ModelContext>& ctx, std::string model_path, int input_size);
@@ -236,6 +265,7 @@ class InferenceNode : public rclcpp::Node {
     // Policy/model runtime helpers.
     void initialize_runtime_state();
     void reset_runtime_state();
+    void request_depth_history_reset();
     void reset_policy_runtime(PolicyRuntime& policy);
     void step_motion_frame();
 
@@ -251,9 +281,14 @@ class InferenceNode : public rclcpp::Node {
                              const std::vector<ObsSourceSpec>& layout);
     void flatten_obs_segments(const std::vector<std::vector<float>>& segments,
                               std::vector<float>::iterator output_begin);
+    void update_obs_history(std::vector<float>& history, const std::vector<float>& obs,
+                            int obs_num, int frame_stack, bool is_first_frame);
     void update_stacked_obs(std::vector<float>& input_buffer, const std::vector<float>& obs,
                             int obs_num, int frame_stack, ObsStackOrder stack_order,
                             const std::vector<int>& field_sizes, bool is_first_frame);
+    void gather_sparse_obs_history(std::vector<float>& input_buffer,
+                                   const std::vector<float>& obs_history,
+                                   const std::vector<ObsHistorySlice>& gather_plan);
 
     // Observation getters.
     void get_cmd_vel_obs(std::vector<float>& segment);
@@ -266,6 +301,7 @@ class InferenceNode : public rclcpp::Node {
     void get_perception_obs(std::vector<float>& segment);
     void get_motion_pos_obs(std::vector<float>& segment);
     void get_motion_vel_obs(std::vector<float>& segment);
+    void get_latent_obs(std::vector<float>& segment);
 
     void init_motors_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                          std::shared_ptr<std_srvs::srv::Trigger::Response> response);

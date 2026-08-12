@@ -3,6 +3,22 @@
 
 #include "inference_node.hpp"
 
+void InferenceNode::update_obs_history(std::vector<float>& history,
+                                       const std::vector<float>& obs,
+                                       int obs_num, int frame_stack,
+                                       bool is_first_frame) {
+    if (is_first_frame) {
+        for (int frame = 0; frame < frame_stack; frame++) {
+            std::copy(obs.begin(), obs.end(), history.begin() + frame * obs_num);
+        }
+        return;
+    }
+    std::move(history.begin() + obs_num,
+              history.begin() + frame_stack * obs_num,
+              history.begin());
+    std::copy(obs.begin(), obs.end(), history.begin() + (frame_stack - 1) * obs_num);
+}
+
 ObsStackOrder InferenceNode::parse_obs_stack_order(const std::string& stack_order_name) {
     if (stack_order_name == "frame_major") {
         return ObsStackOrder::FrameMajor;
@@ -17,16 +33,7 @@ void InferenceNode::update_stacked_obs(std::vector<float>& input_buffer, const s
                                        int obs_num, int frame_stack, ObsStackOrder stack_order,
                                        const std::vector<int>& field_sizes, bool is_first_frame) {
     if (stack_order == ObsStackOrder::FrameMajor) {
-        if (is_first_frame) {
-            for (int frame = 0; frame < frame_stack; frame++) {
-                std::copy(obs.begin(), obs.end(), input_buffer.begin() + frame * obs_num);
-            }
-        } else {
-            std::move(input_buffer.begin() + obs_num,
-                      input_buffer.begin() + frame_stack * obs_num,
-                      input_buffer.begin());
-            std::copy(obs.begin(), obs.end(), input_buffer.begin() + (frame_stack - 1) * obs_num);
-        }
+        update_obs_history(input_buffer, obs, obs_num, frame_stack, is_first_frame);
         return;
     }
 
@@ -51,7 +58,18 @@ void InferenceNode::update_stacked_obs(std::vector<float>& input_buffer, const s
     }
 }
 
-void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string model_path, int input_size){
+void InferenceNode::gather_sparse_obs_history(
+    std::vector<float>& input_buffer,
+    const std::vector<float>& obs_history,
+    const std::vector<ObsHistorySlice>& gather_plan) {
+    auto output = input_buffer.begin();
+    for (const ObsHistorySlice& slice : gather_plan) {
+        output = std::copy_n(
+            obs_history.begin() + slice.history_offset, slice.size, output);
+    }
+}
+
+void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string model_path, int input_size) {
     if (!ctx) {
         ctx = std::make_unique<ModelContext>();
     }
@@ -98,6 +116,8 @@ void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string 
         ctx->output_names[i] = output_name.get();
         auto type_info = ctx->session->GetOutputTypeInfo(i);
         ctx->output_shape = type_info.GetTensorTypeAndShapeInfo().GetShape();
+        if (ctx->output_shape[0] == -1) ctx->output_shape[0] = 1;
+        if (ctx->output_shape[1] == -1) ctx->output_shape[1] = joint_num_;
     }
 
     ctx->input_names_raw = std::vector<const char *>(ctx->num_inputs, nullptr);
@@ -120,6 +140,8 @@ void InferenceNode::setup_model(std::unique_ptr<ModelContext>& ctx, std::string 
 
 void InferenceNode::reset_runtime_state() {
     is_running_.store(false);
+    std::unique_lock<std::mutex> mode_lock(mode_mutex_);
+    std::unique_lock<std::mutex> control_lock(control_mutex_);
     is_interrupt_.store(false);
     is_motion_policy_.store(false);
     active_policy_idx_ = 0;
@@ -151,13 +173,21 @@ void InferenceNode::reset_runtime_state() {
     for (PolicyRuntime& policy : policies_) {
         reset_policy_runtime(policy);
     }
+    request_depth_history_reset();
+}
+
+void InferenceNode::request_depth_history_reset() {
+    if (!use_depth_ || !clear_depth_history_client_) {
+        return;
+    }
+    if (!clear_depth_history_client_->service_is_ready()) {
+        return;
+    }
+    auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+    clear_depth_history_client_->async_send_request(request);
 }
 
 InferenceNode::PolicyRuntime& InferenceNode::active_policy() {
-    return policies_[active_policy_idx_];
-}
-
-const InferenceNode::PolicyRuntime& InferenceNode::active_policy() const {
     return policies_[active_policy_idx_];
 }
 
@@ -208,19 +238,20 @@ void InferenceNode::reset_policy_runtime(PolicyRuntime& policy) {
     for (auto& segment : policy.obs_segments) {
         std::fill(segment.begin(), segment.end(), 0.0f);
     }
-    for (auto& segment : policy.extra_obs_segments) {
-        std::fill(segment.begin(), segment.end(), 0.0f);
-    }
     if (policy.ctx) {
         std::fill(policy.ctx->input_buffer.begin(), policy.ctx->input_buffer.end(), 0.0f);
         std::fill(policy.ctx->output_buffer.begin(), policy.ctx->output_buffer.end(), 0.0f);
     }
     policy.motion_frame = 0;
+    if (policy.latent_loader) {
+        policy.latent_loader->reset();
+    }
     policy.is_first_frame = true;
 }
 
 void InferenceNode::apply_action() {
-    if(!is_running_.load() || !robot_->is_init_.load()){
+    std::unique_lock<std::mutex> control_lock(control_mutex_);
+    if(!is_running_.load()){
         return;
     }
     {
@@ -234,15 +265,16 @@ void InferenceNode::apply_action() {
 
 void InferenceNode::control() {
     pthread_setname_np(pthread_self(), "control");
-    struct sched_param sp{}; sp.sched_priority = 70;
+    struct sched_param sp{}; sp.sched_priority = 45;
     if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
         RCLCPP_FATAL(this->get_logger(), "Failed to set realtime priority for control thread");
         rclcpp::shutdown();
         return;
     }
-    auto period = std::chrono::microseconds(static_cast<long long>(dt_ * 1000000));
+    const auto period = std::chrono::microseconds(static_cast<long long>(dt_ * 1000000));
+    auto next_release = std::chrono::steady_clock::now();
     while(rclcpp::ok()){
-        auto loop_start = std::chrono::steady_clock::now();
+        next_release += period;
         try {
             apply_action();
         } catch (const std::exception& e) {
@@ -251,34 +283,71 @@ void InferenceNode::control() {
             return;
         }
         auto loop_end = std::chrono::steady_clock::now();
-        auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(loop_end - loop_start);
-        auto sleep_time = period - elapsed_time;
-        if (sleep_time > std::chrono::microseconds(0)) {
-            std::this_thread::sleep_for(sleep_time);
+        if (loop_end > next_release) {
+            const auto missed_periods = (loop_end - next_release) / period;
+            next_release += period * missed_periods;
+            if (next_release < loop_end) {
+                next_release += period;
+            }
         }
+        std::this_thread::sleep_until(next_release);
     }
 }
 
 void InferenceNode::inference() {
     pthread_setname_np(pthread_self(), "inference");
-    struct sched_param sp{}; sp.sched_priority = 70;
+    const unsigned int total_cores = std::thread::hardware_concurrency();
+    const unsigned int cpu_id = total_cores > 1 ? total_cores / 2 : 0;
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(cpu_id, &cpuset);
+    if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
+        RCLCPP_FATAL(this->get_logger(), "Failed to bind inference thread to Core %u", cpu_id);
+        rclcpp::shutdown();
+        return;
+    }
+    struct sched_param sp{}; sp.sched_priority = 35;
     if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
         RCLCPP_FATAL(this->get_logger(), "Failed to set realtime priority for inference thread");
         rclcpp::shutdown();
         return;
     }
-    auto period = std::chrono::microseconds(static_cast<long long>(dt_ * 1000 * 1000 * decimation_));
+    const auto period = std::chrono::microseconds(static_cast<long long>(dt_ * 1000 * 1000 * decimation_));
+    auto next_release = std::chrono::steady_clock::now();
 
     while(rclcpp::ok()){
+        next_release += period;
         auto loop_start = std::chrono::steady_clock::now();
         if(!is_running_.load()){
-            std::this_thread::sleep_for(period);
+            const auto now = std::chrono::steady_clock::now();
+            if (now > next_release) {
+                const auto missed_periods = (now - next_release) / period;
+                next_release += period * missed_periods;
+                if (next_release < now) {
+                    next_release += period;
+                }
+            }
+            std::this_thread::sleep_until(next_release);
             continue;
         }
 
         try {
             std::unique_lock<std::mutex> mode_lock(mode_mutex_);
+            if (!is_running_.load()) {
+                mode_lock.unlock();
+                const auto now = std::chrono::steady_clock::now();
+                if (now > next_release) {
+                    const auto missed_periods = (now - next_release) / period;
+                    next_release += period * missed_periods;
+                    if (next_release < now) {
+                        next_release += period;
+                    }
+                }
+                std::this_thread::sleep_until(next_release);
+                continue;
+            }
             auto& policy = active_policy();
+            robot_->read_imu();
             update_obs_segments(policy.obs_segments, policy.obs_layout);
             publish_imu();
             publish_joint_states();
@@ -288,11 +357,22 @@ void InferenceNode::inference() {
                 return std::clamp(val, -clip_observations_, clip_observations_);
             });
 
-            update_stacked_obs(policy.ctx->input_buffer, policy.obs, policy.obs_num, policy.frame_stack,
-                               policy.stack_order, policy.obs_layout_sizes, policy.is_first_frame);
-            if(policy.extra_obs_num > 0){
-                update_obs_segments(policy.extra_obs_segments, policy.extra_obs_layout);
-                flatten_obs_segments(policy.extra_obs_segments, policy.ctx->input_buffer.begin() + policy.frame_stack * policy.obs_num);
+            if (!policy.history_gather_plan.empty()) {
+                if (policy.is_first_frame && policy.latent_loader) {
+                    std::fill(policy.obs_history.begin(),
+                              policy.obs_history.end() - policy.obs_num, 0.0f);
+                    std::copy(policy.obs.begin(), policy.obs.end(),
+                              policy.obs_history.end() - policy.obs_num);
+                } else {
+                    update_obs_history(policy.obs_history, policy.obs, policy.obs_num,
+                                       policy.frame_stack, policy.is_first_frame);
+                }
+                gather_sparse_obs_history(policy.ctx->input_buffer, policy.obs_history,
+                                          policy.history_gather_plan);
+            } else {
+                update_stacked_obs(policy.ctx->input_buffer, policy.obs, policy.obs_num,
+                                   policy.frame_stack, policy.stack_order,
+                                   policy.obs_layout_sizes, policy.is_first_frame);
             }
             if (policy.motion_loader) {
                 step_motion_frame();
@@ -304,20 +384,25 @@ void InferenceNode::inference() {
                 policy.ctx->output_names_raw.data(), policy.ctx->output_tensor.get(), policy.ctx->num_outputs);
 
             {
-                std::unique_lock<std::mutex> lock(act_mutex_);
-                for (int i = 0; i < policy.ctx->output_buffer.size(); i++) {
-                    policy.ctx->output_buffer[i] = std::clamp(policy.ctx->output_buffer[i], -clip_actions_, clip_actions_);
-                    act_[usd2urdf_[i]] = policy.ctx->output_buffer[i];
-                    act_[usd2urdf_[i]] = act_[usd2urdf_[i]] * action_scale_ + joint_default_angle_[usd2urdf_[i]];
+                std::unique_lock<std::mutex> interrupt_lock(interrupt_mutex_, std::defer_lock);
+                if (supports_interrupt() && is_interrupt_.load()) {
+                    interrupt_lock.lock();
                 }
-                if(supports_interrupt() && is_interrupt_.load()){
-                    std::unique_lock<std::mutex> lock(interrupt_mutex_);
+                std::unique_lock<std::mutex> lock(act_mutex_);
+                for (int i = 0; i < static_cast<int>(policy.ctx->output_buffer.size()); i++) {
+                    policy.ctx->output_buffer[i] = action_rescale_ * std::clamp(
+                        policy.ctx->output_buffer[i], -clip_actions_, clip_actions_);
+                    const auto joint_idx = usd2urdf_[i];
+                    act_[joint_idx] = policy.ctx->output_buffer[i] * action_scale_[joint_idx] +
+                                      joint_default_angle_[joint_idx];
+                }
+                if (interrupt_lock.owns_lock()) {
                     for (size_t i = 0; i < interrupt_action_.size(); i++) {
                         act_[act_.size() - interrupt_action_.size() + i] = interrupt_action_[i];
                     }
                 }
-                publish_action();
             }
+            publish_action();
         } catch (const std::exception& e) {
             RCLCPP_FATAL(this->get_logger(), "Exception in inference thread: %s", e.what());
             rclcpp::shutdown();
@@ -325,16 +410,16 @@ void InferenceNode::inference() {
         }
 
         auto loop_end = std::chrono::steady_clock::now();
-        // 使用微秒进行计算
         auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(loop_end - loop_start);
-        auto sleep_time = period - elapsed_time;
-
-        if (sleep_time > std::chrono::microseconds(0)) {
-            std::this_thread::sleep_for(sleep_time);
-        } else {
-            // 警告信息也使用更精确的单位
+        if (loop_end > next_release) {
             RCLCPP_WARN(this->get_logger(), "Inference loop overran! Took %lld us, but period is %lld us.", static_cast<long long>(elapsed_time.count()), static_cast<long long>(period.count()));
+            const auto missed_periods = (loop_end - next_release) / period;
+            next_release += period * missed_periods;
+            if (next_release < loop_end) {
+                next_release += period;
+            }
         }
+        std::this_thread::sleep_until(next_release);
     }
 }
 
@@ -344,12 +429,6 @@ int main(int argc, char **argv) {
         RCLCPP_WARN(rclcpp::get_logger("main"), "mlockall failed.");
     }
     pthread_setname_np(pthread_self(), "main");
-    struct sched_param sp{}; sp.sched_priority = 50;
-    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
-        RCLCPP_FATAL(rclcpp::get_logger("main"), "Failed to set realtime priority for main thread");
-        rclcpp::shutdown();
-        return 1;
-    }
     std::shared_ptr<InferenceNode> node;
     try {
         node = std::make_shared<InferenceNode>();
