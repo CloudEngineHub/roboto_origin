@@ -38,9 +38,15 @@ jobs:
           history_dir="$RUNNER_TEMP/star-history"
           mkdir -p "$history_dir"
 
-          if git fetch --quiet --depth=1 origin refs/heads/star-history; then
+          if git ls-remote --quiet --exit-code --heads origin refs/heads/star-history > /dev/null; then
+            git fetch --quiet --depth=1 origin refs/heads/star-history
             git show FETCH_HEAD:star-history.json > "$history_dir/star-history.json"
           else
+            remote_status=$?
+            if [[ "$remote_status" -ne 2 ]]; then
+              echo "Failed to check the remote star-history branch." >&2
+              exit "$remote_status"
+            fi
             cp .github/data/star-history.json "$history_dir/star-history.json"
           fi
 
